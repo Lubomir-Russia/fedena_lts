@@ -19,7 +19,7 @@
 class FinanceFeeCategory < ActiveRecord::Base
   belongs_to :batch
   belongs_to :student
-#
+
   has_many   :fee_particulars, :class_name => "FinanceFeeParticular"
   has_many   :fee_collections, :class_name => "FinanceFeeCollection"
   has_many   :fee_discounts
