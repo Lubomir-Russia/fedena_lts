@@ -16,10 +16,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 class Timetable < ActiveRecord::Base
-  has_many :timetable_entries , :dependent=>:destroy
+  has_many :timetable_entries, :dependent => :destroy
   validates_presence_of :start_date
   validates_presence_of :end_date
-  default_scope :order=>'start_date ASC'
+  default_scope :order => 'start_date ASC'
+
+  validate :check_start_date_overlap
+  validate :end_date_overlap
+  validate :timetable_in_between_given_dates
+  validate :start_date_is_lower_than_end_date
 
   def self.tte_for_range(batch,date,subject)
     unless subject.elective_group_id.nil?
@@ -111,4 +116,39 @@ class Timetable < ActiveRecord::Base
     stop<<find(:last,:select=>:end_date,:order=>:end_date).end_date.to_date
     range=(start.max..stop.min).to_a - batch.holiday_event_dates
   end
+
+  def current?
+    start_date && end_date && (start_date <= Date.today) && (end_date >= Date.today)
+  end
+
+  def removable?
+    start_date && end_date && (start_date > Date.today) && (end_date > Date.today)
+  end
+
+  private
+
+  def check_start_date_overlap
+    if Timetable.find(:all, :conditions => ['end_date >= ? AND start_date <= ?', start_date, start_date]).any?
+      self.errors.add_to_base(I18n.t('start_date_overlap'))
+    end
+  end
+
+  def end_date_overlap
+    if Timetable.find(:all, :conditions => ['end_date >= ? AND start_date <= ?', end_date, end_date]).any?
+      self.errors.add_to_base(I18n.t('end_date_overlap'))
+    end
+  end
+
+  def timetable_in_between_given_dates
+    if Timetable.find(:all, :conditions => ['end_date <= ? AND start_date >= ?', end_date, start_date]).any?
+      self.errors.add_to_base(I18n.t('timetable_in_between_given_dates'))
+    end
+  end
+
+  def start_date_is_lower_than_end_date
+    if start_date && end_date && start_date > end_date
+      self.errors.add(:start_date, I18n.t('start_date_is_lower_than_end_date'))
+    end
+  end
+
 end

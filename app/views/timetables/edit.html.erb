@@ -1,0 +1,62 @@
+<div id="content-header">
+  <%= image_tag("/images/show_timetable.png") %>
+  <h1><%= t('timetable_text') %></h1>
+  <h3><%= t('edit_timetable') %></h3>
+  <div id="app-back-button">
+    <%= link_to_function image_tag("/images/buttons/back.png",:border => 0), "history.back()" %>
+  </div>
+</div>
+
+<div id="inner-tab-menu">
+  <ul>
+    <% unless @timetable.current? %>
+      <li>
+        <%= link_to t('edit_entries'),:controller=>:timetable_entries,:action => "new",:timetable_id=>@timetable.id %>
+      </li>
+    <% else %>
+      <li>
+        <%= link_to t('edit_entries'),{:controller=>:timetable_entries,:action => "new",:timetable_id=>@timetable.id}, :class => 'delete-button',:confirm=>t("edit_current_tte_confirm") %>
+      </li>
+    <% end %>
+    <% if @timetable.removable? %>
+      <li>
+        <%= link_to t('delete_text'),{ :action => 'destroy', :id => @timetable.id }, :class => 'delete-button', :confirm => "#{t('delete_timetable')}" %>
+      </li>
+    <% end %>
+  </ul>
+</div>
+
+
+<div id="page-yield">
+  <div class="box">
+    <% if flash[:notice].present? %>
+      <p class="flash-msg"> <%= flash[:notice] %> </p>
+    <% end %>
+    <% if @timetable.errors.any? %>
+      <div id="errorExplanation" class="errorExplanation">
+        <ul>
+          <% @timetable.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <% form_for @timetable do |f| %>
+      <div class="label-field-pair">
+        <label for="start_date"><%= t('start_date') %></label>
+        <div class="text-input-bg">
+          <%= f.date_select :start_date, :use_month_numbers => true, :start_year => 1.years.ago.year, :end_year=> 1.years.since.year, :order => [:day, :month, :year], :include_blank => false %>
+        </div>
+      </div>
+
+      <div class="label-field-pair">
+        <label for="end_date"><%= t('end_date') %></label>
+        <div class="text-input-bg">
+          <%= f.date_select :end_date, :use_month_numbers => true, :start_year => 1.years.ago.year, :end_year => 1.years.since.year, :order => [:day, :month, :year], :include_blank => false %>
+        </div>
+      </div>
+
+      <%= submit_tag "► Save", :class => "submit_button" %>
+    <% end %>
+  </div>
+</div>

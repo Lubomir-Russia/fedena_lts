@@ -21,48 +21,6 @@ class TimetableController < ApplicationController
   before_filter :default_time_zone_present_time
   filter_access_to :all
 
-  def new_timetable
-    if request.post?
-      @timetable=Timetable.new(params[:timetable])
-      @error=false
-      previous=Timetable.find(:all,:conditions=>["end_date >= ? AND start_date <= ?",@timetable.start_date,@timetable.start_date])
-      unless previous.empty?
-        @error=true
-        @timetable.errors.add_to_base('start_date_overlap')
-      end
-      conflicts=Timetable.find(:all,:conditions=>["end_date >= ? AND start_date <= ?",@timetable.end_date,@timetable.end_date])
-      unless conflicts.empty?
-        @error=true
-        @timetable.errors.add_to_base('end_date_overlap')
-      end
-      fully_overlapping=Timetable.find(:all,:conditions=>["end_date <= ? AND start_date >= ?",@timetable.end_date,@timetable.start_date])
-      unless fully_overlapping.empty?
-        @error=true
-        @timetable.errors.add_to_base('timetable_in_between_given_dates')
-      end
-      #      unless @timetable.start_date>=Date.today
-      #        @error=true
-      #        @timetable.errors.add_to_base('start_date_is_lower_than_today')
-      #      end
-      if @timetable.start_date > @timetable.end_date
-        @error=true
-        @timetable.errors.add_to_base('start_date_is_lower_than_end_date')
-      end
-      unless @error
-        if @timetable.save
-          flash[:notice]="#{t('timetable_created_from')} #{@timetable.start_date} - #{@timetable.end_date}"
-          redirect_to :controller=>:timetable_entries,:action => "new",:timetable_id=>@timetable.id
-        else
-          flash[:notice]='error_occured'
-          render :action=>'new_timetable'
-        end
-      else
-        flash[:warn_notice]=@timetable.errors.full_messages unless @timetable.errors.empty?
-        render :action=>'new_timetable'
-      end
-    end
-  end
-
   def update_timetable
     @timetable=Timetable.find(params[:id])
     @current=false
@@ -72,58 +30,14 @@ class TimetableController < ApplicationController
     if (@timetable.start_date > Date.today and @timetable.end_date > Date.today)
       @removable=true
     end
+
+
+
+
     if request.post?
       @tt=Timetable.find(params[:id])
       @error=false
-      if params[:timetable][:"start_date(1i)"].present?
-        date_start=[params[:timetable][:"start_date(1i)"].to_i,params[:timetable][:"start_date(2i)"].to_i,params[:timetable][:"start_date(3i)"].to_i]
-        unless Date::valid_date?(date_start[0],date_start[1],date_start[2]).nil?
-          new_start = Date.civil(date_start[0],date_start[1],date_start[2])
-        else
-          @timetable.errors.add_to_base('start_date_is_invalid')
-          @error=true
-          new_start=@tt.start_date
-        end
-      else
-        new_start=@tt.start_date
-      end
-      if params[:timetable][:"end_date(1i)"].present?
-        date_end=[params[:timetable][:"end_date(1i)"].to_i,params[:timetable][:"end_date(2i)"].to_i,params[:timetable][:"end_date(3i)"].to_i]
-        unless Date::valid_date?(date_end[0],date_end[1],date_end[2]).nil?
-          new_end = Date.civil(date_end[0],date_end[1],date_end[2])
-        else
-          @timetable.errors.add_to_base('end_date_is_invalid')
-          @error=true
-          new_end=@tt.end_date
-        end
-      else
-        new_end=@tt.end_date
-      end
-      if new_end<new_start
-        @error=true
-        @timetable.errors.add_to_base('start_date_is_lower_than_end_date')
-      end
-      if new_end < Date.today
-        @error=true
-        @timetable.errors.add_to_base('end_date_is_lower_than_today')
-      end
-      #      @end_conflicts=Timetable.find(:all,:conditions=>["start_date <= ? AND id != ?",new_end,@tt.id])
-      @end_conflicts=Timetable.find(:all,:conditions=>["start_date <= ? AND end_date >= ? AND id != ?",new_end,new_start,@tt.id])
-      unless @end_conflicts.empty?
-        @error=true
-        @timetable.errors.add_to_base('end_date_overlap')
-      end
-      fully_overlapping=Timetable.find(:all,:conditions=>["end_date <= ? AND start_date >= ?",@timetable.end_date,@timetable.start_date])
-      unless fully_overlapping.empty?
-        @error=true
-        @timetable.errors.add_to_base('timetable_in_between_given_dates')
-      end
-      unless @current
-        if new_start<=Date.today
-          @timetable.errors.add_to_base('start_date_is_lower_than_today')
-          @error=true
-        end
-      end
+
       unless @error
         if (@tt.start_date <= Date.today and @tt.end_date >= Date.today)
           @tt.end_date=Date.today
@@ -171,11 +85,6 @@ class TimetableController < ApplicationController
   def view
     @courses = Batch.active
     @timetables=Timetable.all
-  end
-
-  def edit_master
-    @courses = Batch.active
-    @timetables=Timetable.find(:all,:conditions=>["end_date > ?",@local_tzone_time.to_date])
   end
 
   def teachers_timetable

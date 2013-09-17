@@ -33,7 +33,7 @@
   <% end %>
 
   <div class="box">
-    <%  if permitted_to? :new_timetable,:timetable%>
+    <% if permitted_to? :new_timetable,:timetable%>
       <div class="link-box">
         <div class="link-heading"><%= link_to "#{t('create_text')} #{t('weekdays_text')}", :controller => "weekday", :action => "index" %></div>
         <div class="link-descr"><%= t('create_text') %> <%= t('weekdays_text') %></div>
@@ -50,13 +50,13 @@
         <div class="link-descr"><%= t('work_allotment_descr') %>.</div>
       </div>
     <%  end%>
-    <%if permitted_to? :new_timetable,:timetable%>
+    <%if permitted_to? :new, :timetables %>
       <div class="link-box">
         <% @config = Configuration.available_modules %>
         <% if @config.include?('HR') %>
-          <div class="link-heading"><%= link_to "#{t('create_timetable')}", :action => "new_timetable" %></div>
+          <div class="link-heading"><%= link_to "#{t('create_timetable')}", new_timetable_path %></div>
         <% else %>
-          <div class="link-heading"><%= link_to "#{t('create_timetable')}", :action => "new_timetable" %></div>
+          <div class="link-heading"><%= link_to "#{t('create_timetable')}", new_timetable_path %></div>
         <% end %>
         <div class="link-descr"><%= t('select_a_class_and_create_the_timetable') %>.</div>
       </div>

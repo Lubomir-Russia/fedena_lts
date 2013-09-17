@@ -526,7 +526,7 @@ authorization do
   end
 
   role :students_control do
-    has_permission_on [:student] , 
+    has_permission_on [:student] ,
       :to => [
       :academic_reports_pdf,
       :academic_report,
@@ -732,7 +732,7 @@ authorization do
   end
 
   role :manage_timetable do
-    
+
     has_permission_on [:class_timings], :to => [:index, :edit, :destroy, :show, :new, :create, :update]
     has_permission_on [:weekday], :to => [:index, :week, :create]
     has_permission_on [:timetable],
@@ -871,7 +871,7 @@ authorization do
     has_permission_on [:sms], :to => [:index, :settings, :students, :batches, :employees, :departments,:all, :update_general_sms_settings, :list_students, :sms_all, :list_employees, :show_sms_messages, :show_sms_logs]
   end
   role :event_management do
-    
+
     has_permission_on [:event], :to => [:index, :show, :confirm_event, :cancel_event, :select_course, :event_group, :course_event, :remove_batch, :select_employee_department, :department_event, :remove_department,:edit_event]
     has_permission_on [:calendar], :to => [:event_delete]
   end
@@ -1193,7 +1193,7 @@ authorization do
       :employee_leave_count_edit,
       :employee_leave_count_update,
       :employee_attendance
-        
+
     ]
     has_permission_on [:payroll] ,
       :to => [
@@ -1883,7 +1883,7 @@ authorization do
       :liability_pdf
 
     ]
-        
+
     has_permission_on [:xml], :to =>
       [
       :create_xml,
@@ -1891,7 +1891,7 @@ authorization do
       :settings,
       :download
     ]
-        
+
     has_permission_on [:holiday], :to => [:index,:edit,:delete]
     has_permission_on [:news],
       :to => [
@@ -2020,6 +2020,14 @@ authorization do
       :delete,
       :edit,
       :list_subjects ]
+    has_permission_on [:timetables], :to => [
+      :new,
+      :create,
+      :index,
+      :edit,
+      :update,
+      :destroy
+    ]
     has_permission_on [:timetable],
       :to => [:index,
       :new_timetable,
@@ -2189,7 +2197,7 @@ authorization do
       :employee_leave_count_edit,
       :employee_leave_count_update,
       :view_employee_payslip
-      
+
     ]
     has_permission_on [:calendar], :to => [:event_delete]
 
@@ -2501,7 +2509,7 @@ authorization do
   role :subject_attendance do
     has_permission_on [:attendances], :to => [:index, :list_subject, :show, :new, :create, :edit,:update, :destroy,:subject_wise_register]
     has_permission_on [:attendance_reports], :to => [:index, :subject, :mode, :show, :year, :report, :filter, :student_details,:report_pdf,:filter_report_pdf]
-    
+
   end
 
   role :subject_exam do
