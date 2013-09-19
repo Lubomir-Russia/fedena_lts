@@ -45,14 +45,14 @@
       <div class="label-field-pair">
         <label for="start_date"><%= t('start_date') %></label>
         <div class="text-input-bg">
-          <%= f.date_select :start_date, :use_month_numbers => true, :start_year => 1.years.ago.year, :end_year=> 1.years.since.year, :order => [:day, :month, :year], :include_blank => false %>
+          <%= f.text_field :start_date, :id => 'start_date' %>
         </div>
       </div>
 
       <div class="label-field-pair">
         <label for="end_date"><%= t('end_date') %></label>
         <div class="text-input-bg">
-          <%= f.date_select :end_date, :use_month_numbers => true, :start_year => 1.years.ago.year, :end_year => 1.years.since.year, :order => [:day, :month, :year], :include_blank => false %>
+          <%= f.text_field :end_date, :id => 'end_date' %>
         </div>
       </div>
 
@@ -60,3 +60,9 @@
     <% end %>
   </div>
 </div>
+
+<script type="text/javascript">
+  jQuery(document).ready(function() {
+    jQuery('#start_date, #end_date').datepicker({ dateFormat: "dd-mm-yy" });
+  });
+</script>

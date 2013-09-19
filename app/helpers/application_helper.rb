@@ -28,7 +28,7 @@ module ApplicationHelper
       stylesheets << @direction+'application'
       stylesheets << @direction+'popup.css'
     end
-    stylesheets << @direction+'_styles/ui.all.css'
+    stylesheets << @direction+'jquey_ui/ui-lightness/jquery-ui.css'
     stylesheets << @direction+'modalbox'
     stylesheets << @direction+'autosuggest-menu.css'
     stylesheets << 'calendar'
