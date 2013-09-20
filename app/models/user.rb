@@ -19,35 +19,25 @@ class User < ActiveRecord::Base
   attr_accessor :password, :role, :old_password, :new_password, :confirm_password
 
   validates_uniqueness_of :username, :scope => [:is_deleted], :if => 'is_deleted == false'
-  validates_length_of     :username, :within => 1..20
-  validates_length_of     :password, :within => 4..40, :allow_nil => true
-  validates_format_of     :username, :with => /\A[A-Z0-9_-]*\z/i,
+  validates_length_of :username, :within => 1..20
+  validates_length_of :password, :within => 4..40, :allow_nil => true
+  validates_format_of :username, :with => /\A[A-Z0-9_-]*\z/i,
     :message => "#{t('must_contain_only_letters')}"
-  validates_format_of     :email, :with => /\A[A-Z0-9._%-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}\z/i, :allow_blank => true,
+  validates_format_of :email, :with => /\A[A-Z0-9._%-]+@([A-Z0-9-]+\.)+[A-Z]{2,4}\z/i, :allow_blank => true,
     :message => "#{t('must_be_a_valid_email_address')}"
-  validates_presence_of   :role,     :on => :create
-  validates_presence_of   :password, :on => :create
+  validates_presence_of :role, :on => :create
+  validates_presence_of :password, :on => :create
 
   has_and_belongs_to_many :privileges
-  has_many  :user_events
-  has_many  :events, :through => :user_events
-  has_one :student_record,  :class_name => 'Student',  :foreign_key => 'user_id'
+  has_many :user_events
+  has_many :events, :through => :user_events
+  has_one :student_record, :class_name => 'Student', :foreign_key => 'user_id'
   has_one :employee_record, :class_name => 'Employee', :foreign_key => 'user_id'
 
-  named_scope :active,   :conditions => { :is_deleted => false }
+  named_scope :active, :conditions => { :is_deleted => false }
   named_scope :inactive, :conditions => { :is_deleted => true }
 
-  def before_save
-    self.salt = random_string(8) if self.salt.blank?
-    self.hashed_password = Digest::SHA1.hexdigest(self.salt + self.password) if self.password.blank?
-    if self.new_record?
-      self.admin    = self.role == 'Admin'
-      self.student  = self.role == 'Student'
-      self.employee = self.role == 'Employee'
-      self.parent   = self.role == 'Parent'
-      self.is_first_login = true
-    end
-  end
+  before_save :user_security
 
   def full_name
     "#{first_name} #{last_name}"
@@ -112,7 +102,7 @@ class User < ActiveRecord::Base
     Student.find_by_admission_no(self.username[1..self.username.length])
   end
 
-  def has_subject_in_batch(b)
+  def has_subject_in_batch?(b)
     employee_record.subjects.collect(&:batch_id).include?(b.id)
   end
 
@@ -140,10 +130,10 @@ class User < ActiveRecord::Base
   end
 
   def next_event(date)
-    all_events=[]
+    all_events = []
     case(role_name)
     when 'Admin'
-      all_events = Event.find(:all,:conditions => ['? < DATE(events.end_date)', date], :order => 'start_date')
+      all_events = Event.find(:all, :conditions => ['? < DATE(events.end_date)', date], :order => 'start_date')
     when 'Student'
       all_events += events.all(:conditions => ['? < DATE(events.end_date)', date])
       all_events += student_record.batch.events.all(:conditions => ['? < DATE(events.end_date)', date], :order => 'start_date')
@@ -171,5 +161,19 @@ class User < ActiveRecord::Base
   def soft_delete
     self.update_attributes(:is_deleted => true)
   end
+
+  private
+
+    def user_security
+      self.salt = random_string(8) if self.salt.blank?
+      self.hashed_password = Digest::SHA1.hexdigest(self.salt + self.password) if !self.password.nil?
+      if self.new_record?
+        self.admin    = self.role == 'Admin'
+        self.student  = self.role == 'Student'
+        self.employee = self.role == 'Employee'
+        self.parent   = self.role == 'Parent'
+        self.is_first_login = true
+      end
+    end
 
 end

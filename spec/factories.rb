@@ -17,6 +17,24 @@ FactoryGirl.define do
     role 'Admin'
   end
 
+  factory :student_user, :class => 'User' do
+    sequence(:username) { |n| "student#{n}" }
+    password            { |u1| "#{u1.username}123" }
+    email               { |u1| "#{u1.username}@fedena.com" }
+    first_name          'John'
+    last_name           'Doe'
+    role                'Student'
+  end
+
+  factory :parent_user, :class => 'User' do
+    sequence(:username) { |n| "parent#{n}" }
+    password            { |u1| "#{u1.username}123" }
+    email               { |u1| "#{u1.username}@fedena.com" }
+    first_name          'John'
+    last_name           'Doe'
+    role                'Parent'
+  end
+
   factory :reminder do
     recipient { FactoryGirl.create(:employee_user).id }
     body      'Reminding'
@@ -255,5 +273,10 @@ FactoryGirl.define do
     due_date         { Date.today + 2.days }
     fee_category_id  1
     is_deleted       false
+  end
+
+  factory :privilege do
+    sequence(:name)        { |n| "PrivilegeNo#{n}" }
+    sequence(:description) { |n| "Privilege Description #{n}" }
   end
 end
