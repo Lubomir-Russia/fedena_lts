@@ -48,109 +48,118 @@ class FinanceFeeStructureElement < ActiveRecord::Base
           :student_category_id => nil,
           :student_id => nil,
           :deleted => false
-        })
+        }
+      )
       elements[:by_batch] = find(:all,
-        :conditions => "
-        batch_id IS NOT NULL AND
-        student_id IS NULL AND
-        student_category_id IS NULL AND
-        deleted = false
-        ")
-      elements[:by_category] = find(:all, :conditions => "
-        student_category_id IS NOT NULL AND
-        batch_id IS NULL
-        ")
-      elements[:by_batch_and_category] = find(:all, :conditions => "
-        batch_id IS NOT NULL AND
-        student_category_id IS NOT NULL
-        ")
+        :conditions =>
+          "batch_id is not null AND
+          student_id is null AND
+          student_category_id is null AND
+          deleted = false"
+      )
+      elements[:by_category] = find(:all,
+        :conditions =>
+          "student_category_id is not null AND
+          batch_id is null"
+      )
+      elements[:by_batch_and_category] = find(:all,
+        :conditions =>
+          "batch_id is not null AND
+          student_category_id is not null"
+      )
       elements
     end
 
     def get_student_fee_components(student,date)
       elements = {}
       elements[:all] = find(:all,
-        :conditions => "
-        batch_id IS NULL AND
-        student_category_id IS NULL AND
-        student_id IS NULL AND
-        deleted = false"
+        :conditions =>
+          "batch_id is null AND
+          student_category_id is null AND
+          student_id is null AND
+          deleted = false"
       )
       elements[:by_batch] = find(:all,
-        :conditions => "
-        batch_id = #{student.batch_id} AND
-        student_category_id IS NULL AND
-        fee_collection_id = NULL AND
-        student_id IS NULL AND
-        deleted = false
-        ")
+        :conditions =>
+          ["batch_id = ? AND
+          student_category_id is null AND
+          fee_collection_id = NULL AND
+          student_id is null AND
+          deleted = false
+          ", student.batch_id]
+      )
       elements[:by_batch_and_fee_collection] = find(:all,
-        :conditions => "
-
-        student_category_id IS NULL AND
-        fee_collection_id = #{date}  AND
-        student_id IS NULL AND
-        deleted = false
-        ")
-      elements[:by_category] = find(:all, :conditions => "
-        batch_id IS NULL AND
-        student_category_id = #{student.student_category_id} AND
-        student_id IS NULL AND
-        deleted = false
-        ")
-      elements[:by_batch_and_category] = find(:all, :conditions => "
-        batch_id = #{student.batch_id} AND
-        student_category_id = #{student.student_category_id} AND
-        student_id IS NULL AND
-        deleted = false
-        ")
-      elements[:student] = find(:all, :conditions => "
-        batch_id IS NULL AND
-        student_category_id IS NULL AND
-        student_id = #{student.id} AND
-        parent_id IS NULL AND
-        deleted = false
-        ")
-      elements[:student_current_fee_cycle] = find(:all, :conditions => "
-        student_id = #{student.id} AND
-        fee_collection_id = #{date} AND
-        parent_id IS NOT NULL AND
-        deleted = false
-        ")
+        :conditions =>
+          ["student_category_id is null AND
+          fee_collection_id = ?  AND
+          student_id is null AND
+          deleted = false
+          ", date]
+      )
+      elements[:by_category] = find(:all,
+        :conditions =>
+          ["batch_id is null AND
+          student_category_id = ? AND
+          student_id is null AND
+          deleted = false
+          ", student.student_category_id]
+      )
+      elements[:by_batch_and_category] = find(:all,
+        :conditions =>
+          ["batch_id = ? AND
+          student_category_id = ? AND
+          student_id is null AND
+          deleted = false", student.batch_id, student.student_category_id]
+      )
+      elements[:student] = find(:all,
+        :conditions =>
+          ["batch_id is null AND
+          student_category_id is null AND
+          student_id = ? AND
+          parent_id is null AND
+          deleted = false
+          ", student.id]
+      )
+      elements[:student_current_fee_cycle] = find(:all,
+        :conditions =>
+          ["student_id = ? AND
+          fee_collection_id = ? AND
+          parent_id is not null AND
+          deleted = false
+          ", student.id, date]
+      )
       elements
     end
 
     def get_batch_fee_components(batch)
       elements = {}
       elements[:all] = find(:all,
-        :conditions => "
-        batch_id IS NULL AND
-        student_category_id IS NULL AND
-        student_id IS NULL AND
+        :conditions =>
+        "batch_id is null AND
+        student_category_id is null AND
+        student_id is null AND
         deleted = false"
       )
       elements[:by_batch] = find(:all,
-        :conditions => "
-        batch_id = #{batch.id} AND
-        student_category_id IS NULL AND
-        student_id IS NULL AND
-        deleted = false
-        ")
-      elements[:by_category] = find(:all, :conditions => "
-        student_category_id IS NOT NULL AND
-        batch_id IS NULL
-        ")
-      elements[:by_batch_and_category] = find(:all, :conditions => "
-        batch_id  = #{batch.id} AND
-        student_category_id IS NOT NULL
-        ")
+        :conditions =>
+          ["batch_id = ? AND
+          student_category_id is null AND
+          student_id is null AND
+          deleted = false
+          ", batch.id]
+      )
+      elements[:by_category] = find(:all,
+        :conditions =>
+        "student_category_id is not null AND
+        batch_id is null"
+      )
+      elements[:by_batch_and_category] = find(:all,
+        :conditions =>
+          ["batch_id  = ? AND
+          student_category_id is not null
+          ", batch.id]
+      )
       elements
-
-      elements
-
     end
-
   end
-
-
 end
