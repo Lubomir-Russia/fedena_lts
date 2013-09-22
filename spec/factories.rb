@@ -90,6 +90,11 @@ FactoryGirl.define do
     desc    'description'
   end
 
+  factory :observation do
+    name    'Observation name'
+    desc    'description'
+  end
+
   factory :employee_leave_type do
     name      'employ leave type name'
     sequence(:code) { |n| "elt code#{n}" }
