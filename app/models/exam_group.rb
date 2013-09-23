@@ -30,10 +30,7 @@ class ExamGroup < ActiveRecord::Base
 
   before_save :set_exam_date
   before_validation :grade_exam_marks
-
-  def removable?
-    self.exams.reject { |e| e.removable? }.empty?
-  end
+  before_destroy :removable?
 
   def batch_average_marks(marks)
     batch = self.batch
@@ -136,7 +133,7 @@ class ExamGroup < ActiveRecord::Base
       total_marks = total_marks + (exam_score.marks || 0) unless exam_score.nil?
       max_total = max_total + exam.maximum_marks unless exam_score.nil?
     end
-    result = [total_marks,max_total]
+    result = [total_marks, max_total]
   end
 
   def archived_total_marks(student)
@@ -156,6 +153,10 @@ class ExamGroup < ActiveRecord::Base
   end
 
   private
+
+    def removable?
+      self.exams.reject { |e| e.removable? }.empty?
+    end
 
     def set_exam_date
       self.exam_date = self.exam_date || Date.today

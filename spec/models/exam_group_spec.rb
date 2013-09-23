@@ -39,7 +39,7 @@ describe ExamGroup do
 
       it 'save current date' do
         exam_group.save
-        exam_group.exam_date.should == Date.current
+        exam_group.exam_date.should == Date.today
       end
     end
 
@@ -54,11 +54,11 @@ describe ExamGroup do
   end
 
   describe '#removable?' do
-    let(:exam_score) { ExamScore.new }
-    let(:exam) { Exam.new(:exam_scores => [exam_score]) }
-    let(:exam_group) { ExamGroup.new(:exams => [exam]) }
+    let(:exam_score) { FactoryGirl.build(:exam_score) }
+    let(:exam) { FactoryGirl.build(:exam, :exam_scores => [exam_score]) }
+    let(:exam_group) { FactoryGirl.build(:exam_group, :exams => [exam]) }
 
-    context 'exam is removable?' do
+    context 'exam is not removable?' do
       before do
         exam_score.marks = 10
         exam_score.grading_level_id = 99
@@ -69,7 +69,7 @@ describe ExamGroup do
       end
     end
 
-    context 'exam is not removable?' do
+    context 'exam is removable?' do
       before do
         exam_score.marks = nil
         exam_score.grading_level_id = nil
@@ -82,7 +82,7 @@ describe ExamGroup do
   end
 
   describe '#grade_exam_marks' do
-    let(:sub) { Subject.new(:batch => Batch.new(:course => Course.new, :name => 'batchname')) }
+    let(:sub) { FactoryGirl.build(:subject, :batch => FactoryGirl.build(:batch, :course => FactoryGirl.build(:course), :name => 'batchname')) }
     let(:exam) { FactoryGirl.build(:exam, :subject => sub) }
     let(:exam_group) { FactoryGirl.create(:exam_group, :exam_type => 'Grades', :exams => [exam]) }
 
@@ -107,8 +107,8 @@ describe ExamGroup do
 
     context 'ExamScore is found' do
       before do
-        ExamScore.create(:student => @student1, :exam => @exam1, :marks => 80)
-        ExamScore.create(:student => @student2, :exam => @exam2, :marks => 90)
+        FactoryGirl.create(:exam_score, :student => @student1, :exam => @exam1, :marks => 80)
+        FactoryGirl.create(:exam_score, :student => @student2, :exam => @exam2, :marks => 90)
       end
 
       it 'returns batch_average_marks' do
@@ -117,9 +117,7 @@ describe ExamGroup do
     end
 
     context 'ExamScore is not found' do
-      before do
-        ExamScore.create(:student => @student1, :exam => @exam1)
-      end
+      before { FactoryGirl.build(:exam_score, :student => @student1, :exam => @exam1) }
 
       it 'returns batch_average_marks' do
         @exam_group.batch_average_marks('marks').should == 0
@@ -138,7 +136,7 @@ describe ExamGroup do
     end
 
     context 'weightage is found' do
-      before { GroupedExam.create(:exam_group_id => exam_group.id, :batch_id => batch.id, :weightage => 50) }
+      before { FactoryGirl.create(:grouped_exam, :exam_group_id => exam_group.id, :batch_id => batch.id) }
 
       it 'returns weightage' do
         exam_group.weightage.should == 50
@@ -161,8 +159,8 @@ describe ExamGroup do
 
     context 'ArchivedStudent is found' do
       before do
-        ArchivedExamScore.create(:student_id => @archived_student1.id, :exam => @exam1, :marks => 72)
-        ArchivedExamScore.create(:student_id => @archived_student2.id, :exam => @exam2, :marks => 68)
+        FactoryGirl.create(:archived_exam_score, :student_id => @archived_student1.id, :exam => @exam1, :marks => 72)
+        FactoryGirl.create(:archived_exam_score, :student_id => @archived_student2.id, :exam => @exam2, :marks => 68)
       end
 
       it 'returns batch_average_marks' do
@@ -171,7 +169,7 @@ describe ExamGroup do
     end
 
     context 'ExamScore is not found' do
-      before { ArchivedExamScore.create(:student_id => @archived_student1.id, :exam => @exam1) }
+      before { FactoryGirl.create(:archived_exam_score, :student_id => @archived_student1.id, :exam => @exam1, :marks => '') }
 
       it 'returns zero' do
         @exam_group.archived_batch_average_marks('marks').should == 0
@@ -193,8 +191,8 @@ describe ExamGroup do
 
     context 'ExamScore is found' do
       before do
-        ExamScore.create(:student => @student1, :exam => @exam, :marks => 80)
-        ExamScore.create(:student => @student2, :exam => @exam, :marks => 70)
+        FactoryGirl.create(:exam_score, :student => @student1, :exam => @exam, :marks => 80)
+        FactoryGirl.create(:exam_score, :student => @student2, :exam => @exam, :marks => 70)
       end
 
       it 'returns average_marks' do
@@ -204,7 +202,7 @@ describe ExamGroup do
 
     context 'ExamScore is not found' do
       before do
-        ExamScore.create(:student => @student1, :exam => @exam)
+        FactoryGirl.build(:exam_score, :student => @student1, :exam => @exam)
       end
 
       it 'returns zero' do
@@ -225,8 +223,8 @@ describe ExamGroup do
 
     context 'ExamScore is found' do
       before do
-        ExamScore.create(:student => @student, :exam => @exam1, :marks => 82)
-        ExamScore.create(:student => @student, :exam => @exam2, :marks => 68)
+        FactoryGirl.create(:exam_score, :student => @student, :exam => @exam1, :marks => 82)
+        FactoryGirl.create(:exam_score, :student => @student, :exam => @exam2, :marks => 68)
       end
 
       it 'returns total_marks' do
@@ -235,7 +233,7 @@ describe ExamGroup do
     end
 
     context 'ExamScore is not found' do
-      before { ExamScore.create(:student => @student, :exam => @exam1) }
+      before { FactoryGirl.create(:exam_score, :student => @student, :exam => @exam1, :marks => '') }
 
       it 'returns total_marks' do
         @exam_group.total_marks(@student).should == [0, 100]
@@ -255,8 +253,8 @@ describe ExamGroup do
 
     context 'ArchivedExamScore is found' do
       before do
-        ArchivedExamScore.create(:student_id => @archived_student.id, :exam => @exam1, :marks => 82)
-        ArchivedExamScore.create(:student_id => @archived_student.id, :exam => @exam2, :marks => 68)
+        FactoryGirl.create(:archived_exam_score, :student_id => @archived_student.id, :exam => @exam1, :marks => 82)
+        FactoryGirl.create(:archived_exam_score, :student_id => @archived_student.id, :exam => @exam2, :marks => 68)
       end
 
       it 'returns archived_total_marks' do
@@ -265,7 +263,7 @@ describe ExamGroup do
     end
 
     context 'ArchivedExamScore is not found' do
-      before { ArchivedExamScore.create(:student_id => @archived_student.id, :exam => @exam1) }
+      before { FactoryGirl.create(:archived_exam_score, :student_id => @archived_student.id, :exam => @exam1, :marks => '') }
 
       it 'returns archived_total_marks' do
         @exam_group.archived_total_marks(@archived_student).should == [0, 100]

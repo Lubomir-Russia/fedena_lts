@@ -79,6 +79,10 @@ FactoryGirl.define do
     batch
   end
 
+  factory :grouped_exam do
+    weightage      50
+  end
+
   factory :fa_group do
     name    'fa group name'
     desc    'description'
@@ -108,6 +112,18 @@ FactoryGirl.define do
     exam_date       { Date.today }
     exam_type       'Marks'
     cce_exam_category
+  end
+
+  factory :exam_score do
+    student     { Factory.build(:student) }
+    exam        { Factory.build(:exam) }
+    marks       72
+  end
+
+  factory :archived_exam_score do
+    student     { Factory.create(:student) }
+    exam        { Factory.create(:exam) }
+    marks       72 
   end
 
   factory :cce_exam_category do
