@@ -50,6 +50,13 @@ FactoryGirl.define do
     type   'free'
   end
 
+  factory :student_fee_discount do
+    name      'student fee discount 1'
+    discount  20
+    type      'StudentFeeDiscount'
+    receiver  { FactoryGirl.create(:student) }
+  end
+
   factory :course do
     course_name  '1'
     section_name 'A'
