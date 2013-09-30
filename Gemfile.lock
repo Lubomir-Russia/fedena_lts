@@ -1,3 +1,8 @@
+PATH
+  remote: vendor/plugins/fckeditor
+  specs:
+    fckeditor (0.0.1)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -102,6 +107,7 @@ DEPENDENCIES
   declarative_authorization
   delayed_job (= 2.0.8)
   factory_girl
+  fckeditor!
   has_and_belongs_to_many_with_deferred_save (= 0.2.0)
   i18n
   in_place_editing
