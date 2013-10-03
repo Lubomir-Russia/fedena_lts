@@ -170,4 +170,75 @@ describe GradingLevel do
       end
     end
   end
+
+  describe '#self.check_credit' do
+    let(:batch) { FactoryGirl.build(:batch) }
+
+    context 'batch is present' do
+      context 'batch.gpa_enabled? && batch.cce_enabled? are false' do
+        before do
+          batch.stub(:gpa_enabled?).and_return(false)
+          batch.stub(:cce_enabled?).and_return(false)
+        end
+
+        it 'returns false' do
+          GradingLevel.check_credit(batch).should be_false
+        end
+
+        context 'batch.gpa_enabled? is true' do
+          before { batch.stub(:gpa_enabled?).and_return(true) }
+
+          it 'returns true' do
+            GradingLevel.check_credit(batch).should be_true
+          end
+        end
+
+        context 'batch.cce_enabled? is true' do
+          before { batch.stub(:cce_enabled?).and_return(true) }
+
+          it 'returns true' do
+            GradingLevel.check_credit(batch).should be_true
+          end
+        end
+      end
+    end
+
+    context 'batch is nil' do
+      context 'Configuration.cce_enabled? && Configuration.has_cwa? && Configuration.has_gpa? are false' do
+        before do
+          Configuration.stub(:cce_enabled?).and_return(false)
+          Configuration.stub(:has_cwa?).and_return(false)
+          Configuration.stub(:has_gpa?).and_return(false)
+        end
+
+        it 'returns false' do
+          GradingLevel.check_credit.should be_false
+        end
+
+        context 'Configuration.cce_enabled? is true' do
+          before { Configuration.stub(:cce_enabled?).and_return(true) }
+
+          it 'returns true' do
+            GradingLevel.check_credit.should be_true
+          end
+        end
+
+        context 'Configuration.has_cwa? is true' do
+          before { Configuration.stub(:has_cwa?).and_return(true) }
+
+          it 'returns true' do
+            GradingLevel.check_credit.should be_true
+          end
+        end
+
+        context 'Configuration.has_gpa? is true' do
+          before { Configuration.stub(:has_cwa?).and_return(true) }
+
+          it 'returns true' do
+            GradingLevel.check_credit.should be_true
+          end
+        end
+      end
+    end
+  end
 end

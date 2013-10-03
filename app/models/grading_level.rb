@@ -51,6 +51,14 @@ class GradingLevel < ActiveRecord::Base
     grade
   end
 
+  def self.check_credit(batch = nil)
+    if batch.present?
+      batch.gpa_enabled? || batch.cce_enabled?
+    else
+      Configuration.cce_enabled? || Configuration.has_cwa? || Configuration.has_gpa?
+    end
+  end
+
   private
 
   def batch_has_gpa?
