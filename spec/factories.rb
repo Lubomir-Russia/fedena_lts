@@ -90,6 +90,10 @@ FactoryGirl.define do
     name    'Cce Grade Set Name'
   end
 
+  factory :cce_grade do
+    name    'Cce Grade Name'
+    grade_point  50
+  end
   factory :observation_group do
     name               'Observation Group Name'
     header_name        'Header Name'
