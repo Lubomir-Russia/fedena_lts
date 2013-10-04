@@ -74,6 +74,8 @@ FactoryGirl.define do
     name       '2010/11'
     started_on { Date.today }
     ended_on   { Date.today + 1.years }
+    is_active  true
+    is_deleted false
   end
 
   factory :batch_group do
@@ -86,6 +88,23 @@ FactoryGirl.define do
     batch
   end
 
+  factory :grouped_exam do
+    weightage    12
+  end
+
+  factory :grouped_exam_report do
+    batch
+    student
+    subject
+    marks    50
+  end
+
+  factory :cce_report do
+    batch
+    student
+    grade_string    'grade string'
+  end
+
   factory :cce_grade_set do
     name    'Cce Grade Set Name'
   end
@@ -96,6 +115,23 @@ FactoryGirl.define do
     observation_kind   'Kind'
     cce_grade_set      { association(:cce_grade_set) }
     desc               'Description'
+  end
+
+  factory :observation do
+    name               'Observation Name'
+    is_active          true
+    desc               'Description'
+    observation_group  { association(:observation_group) }
+  end
+
+  factory :descriptive_indicator do
+    name      'Descriptive Indicator Name'
+    desc      'Description'
+  end
+
+  factory :assessment_score do
+    student
+    grade_points    50
   end
 
   factory :fa_group do
@@ -117,7 +153,7 @@ FactoryGirl.define do
 
   factory :fa_criteria do
     fa_name    'fa_criteria name'
-    desc    'description'
+    desc       'description'
   end
 
   factory :employee_leave_type do
@@ -282,6 +318,11 @@ FactoryGirl.define do
     is_deleted false
   end
 
+  factory :students_subject do
+    student
+    subject
+  end
+
   factory :timetable do
     start_date { Time.now - 5.days }
     end_date   { Time.now + 5.days }
@@ -315,7 +356,7 @@ FactoryGirl.define do
     sequence(:title)       { |n| "event_title #{n}" }
     sequence(:description) { |n| "event_description #{n}" }
     start_date             { Date.today.to_datetime }
-    end_date               { (Date.today + 2.days).to_datetime }
+    end_date               { Date.today.to_datetime + 2.days }
   end
 
   factory :user_event do; end
@@ -324,9 +365,6 @@ FactoryGirl.define do
     is_paid false
     student  { association(:student) }
   end
-
-  factory :assessment_score do; end
-  factory :grouped_exam_report do; end
 
   factory :finance_fee_collection do
     sequence(:name)  { |n| "FFC#{n}" }
