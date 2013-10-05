@@ -86,6 +86,11 @@ FactoryGirl.define do
     batch
   end
 
+  factory :observation do
+    name    'Observation Name'
+    desc    'Observation Description'
+  end
+
   factory :cce_grade_set do
     name    'Cce Grade Set Name'
   end
@@ -147,6 +152,11 @@ FactoryGirl.define do
   factory :cce_exam_category do
     name  'cat name'
     desc  'description'
+  end
+
+  factory :descriptive_indicator do
+    name  'Des Indi Name'
+    desc  'Des Indi Description'
   end
 
   factory :finance_fee_category do
