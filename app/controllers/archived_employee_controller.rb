@@ -21,110 +21,101 @@ class ArchivedEmployeeController < ApplicationController
   filter_access_to :all
 #  prawnto :prawn => {:left_margin => 25, :right_margin => 25}
 
-
-
   def profile
     @current_user = current_user
     @employee = ArchivedEmployee.find(params[:id])
-    @new_reminder_count = Reminder.find_all_by_recipient(@current_user.id, :conditions=>{:is_read => false})
-    @gender = "Male"
-    @gender = "Female" if @employee.gender == "f"
-    @status = "Active"
-    @status = "Inactive" if @employee.status == false
-    @reporting_manager = Employee.find(@employee.reporting_manager_id).first_name unless @employee.reporting_manager_id.nil?
-    @reporting_manager ||= ArchivedEmployee.find(@employee.reporting_manager_id).first_name unless @employee.reporting_manager_id.nil?
+    @new_reminder_count = Reminder.find_all_by_recipient_and_is_read(@current_user.id, false)
+    #require 'debugger';debugger
+    @gender = @employee.gender == 'f' ? 'Female' : 'Male'
+    @status = @employee.status? ? 'Active' : 'Inactive'
+    if @employee.reporting_manager_id.present?
+      @reporting_manager = Employee.find_by_id(@employee.reporting_manager_id).try(:first_name) || ArchivedEmployee.find_by_id(@employee.reporting_manager_id).try(:first_name)
+    end
     exp_years = @employee.experience_year
     exp_months = @employee.experience_month
     date = Date.today
-    total_current_exp_days = (date-@employee.joining_date).to_i
-    current_years = total_current_exp_days/365
-    rem = total_current_exp_days%365
-    current_months = rem/30
-    @total_years = exp_years+current_years unless exp_years.nil?
-    @total_months = exp_months+current_months unless exp_months.nil?
+    total_current_exp_days = (date - @employee.joining_date).to_i
+    current_years = total_current_exp_days / 365
+    rem = total_current_exp_days % 365
+    current_months = rem / 30
+    @total_years = exp_years + current_years if exp_years.present?
+    @total_months = exp_months + current_months if exp_months.present?
   end
 
   def profile_general
     @employee = ArchivedEmployee.find(params[:id])
-    @gender = "Male"
-    @gender = "Female" if @employee.gender == false
-    @status = "Active"
-    @status = "Inactive" if @employee.status == false
-    @reporting_manager = ArchivedEmployee.find(@employee.reporting_manager_id).first_name unless @employee.reporting_manager_id.nil?
+    @gender = @employee.gender == 'f' ? 'Female' : 'Male'
+    @status = @employee.status? ? 'Active' : 'Inactive'
+    @reporting_manager = ArchivedEmployee.find(@employee.reporting_manager_id).first_name if @employee.reporting_manager_id.present?
     exp_years = @employee.experience_year
     exp_months = @employee.experience_month
     date = Date.today
-    total_current_exp_days = (date-@employee.joining_date).to_i
-    current_years = total_current_exp_days/365
-    rem = total_current_exp_days%365
-    current_months = rem/30
-    @total_years = exp_years+current_years unless exp_years.nil?
-    @total_months = exp_months+current_months unless exp_months.nil?
-    render :partial => "general"
+    total_current_exp_days = (date - @employee.joining_date).to_i
+    current_years = total_current_exp_days / 365
+    rem = total_current_exp_days % 365
+    current_months = rem / 30
+    @total_years = exp_years + current_years if exp_years.present?
+    @total_months = exp_months + current_months if exp_months.present?
+    render :partial => 'general'
   end
 
   def profile_personal
     @employee = ArchivedEmployee.find(params[:id])
-    render :partial => "personal"
+    render :partial => 'personal'
   end
 
   def profile_address
     @employee = ArchivedEmployee.find(params[:id])
-    @home_country = Country.find(@employee.home_country_id).name unless @employee.home_country_id.nil?
-    @office_country = Country.find(@employee.office_country_id).name unless @employee.office_country_id.nil?
-    render :partial => "address"
+    @home_country = Country.find(@employee.home_country_id).name if @employee.home_country_id.present?
+    @office_country = Country.find(@employee.office_country_id).name if @employee.office_country_id.present?
+    render :partial => 'address'
   end
 
   def profile_contact
     @employee = ArchivedEmployee.find(params[:id])
-    render :partial => "contact"
+    render :partial => 'contact'
   end
 
   def profile_bank_details
     @employee = ArchivedEmployee.find(params[:id])
     @bank_details = ArchivedEmployeeBankDetail.find_all_by_employee_id(@employee.id)
-    render :partial => "bank_details"
+    render :partial => 'bank_details'
   end
 
   def profile_additional_details
     @employee = ArchivedEmployee.find(params[:id])
     @additional_details = ArchivedEmployeeAdditionalDetail.find_all_by_employee_id(@employee.id)
-    render :partial => "additional_details"
+    render :partial => 'additional_details'
   end
 
 
   def profile_payroll_details
-    @currency_type = Configuration.find_by_config_key("CurrencyType").config_value
+    @currency_type = Configuration.find_by_config_key('CurrencyType').config_value
     @employee = ArchivedEmployee.find(params[:id])
-    @payroll_details = ArchivedEmployeeSalaryStructure.find_all_by_employee_id(@employee, :order=>"payroll_category_id ASC")
-    render :partial => "payroll_details"
+    @payroll_details = ArchivedEmployeeSalaryStructure.find_all_by_employee_id(@employee, :order=>'payroll_category_id ASC')
+    render :partial => 'payroll_details'
   end
 
   def profile_pdf
     @employee = ArchivedEmployee.find(params[:id])
-    @gender = "Male"
-    @gender = "Female" if @employee.gender == "f"
-    @status = "Active"
-    @status = "Inactive" if @employee.status == false
-    @reporting_manager = ArchivedEmployee.find(@employee.reporting_manager_id).first_name unless @employee.reporting_manager_id.nil?
+    @gender = @employee.gender == 'f' ? 'Female' : 'Male'
+    @status = @employee.status? ? 'Active' : 'Inactive'
+    @reporting_manager = ArchivedEmployee.find(@employee.reporting_manager_id).first_name if @employee.reporting_manager_id.present?
     exp_years = @employee.experience_year
     exp_months = @employee.experience_month
     date = Date.today
-    total_current_exp_days = (date-@employee.joining_date).to_i
-    current_years = total_current_exp_days/365
-    rem = total_current_exp_days%365
-    current_months = rem/30
-    @total_years = exp_years+current_years unless exp_years.nil?
-    @total_months = exp_months+current_months unless exp_months.nil?
-    @home_country = Country.find(@employee.home_country_id).name unless @employee.home_country_id.nil?
-    @office_country = Country.find(@employee.office_country_id).name unless @employee.office_country_id.nil?
+    total_current_exp_days = (date - @employee.joining_date).to_i
+    current_years = total_current_exp_days / 365
+    rem = total_current_exp_days % 365
+    current_months = rem / 30
+    @total_years = exp_years + current_years if exp_years.present?
+    @total_months = exp_months + current_months if exp_months.present?
+    @home_country = Country.find(@employee.home_country_id).name if @employee.home_country_id.present?
+    @office_country = Country.find(@employee.office_country_id).name if @employee.office_country_id.present?
     @bank_details = ArchivedEmployeeBankDetail.find_all_by_employee_id(@employee.id)
     @additional_details = ArchivedEmployeeAdditionalDetail.find_all_by_employee_id(@employee.id)
 
-      render :pdf => 'profile_pdf'
-
-
-
+    render :pdf => 'profile_pdf'
   end
 
   def show

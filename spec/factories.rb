@@ -37,6 +37,10 @@ FactoryGirl.define do
     nationality_id  76
   end
 
+  factory :country do
+    sequence(:name) { |n| "Country #{n}" }
+  end
+
   factory :guardian do
     first_name 'Fname'
     last_name  'Lname'
@@ -226,6 +230,14 @@ FactoryGirl.define do
   end
 
   factory :employee_salary_structure do; end
+  factory :archived_employee_salary_structure do; end
+  factory :archived_employee_bank_detail do; end
+  factory :archived_employee_additional_detail do; end
+
+  factory :configuration do
+    config_key    'Config Key'
+    config_value  'Config Value'
+  end
 
   factory :employee_additional_detail do
     sequence(:additional_info) { |n| "additional info #{n}" }

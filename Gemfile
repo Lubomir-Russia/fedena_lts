@@ -27,7 +27,7 @@ end
 
 gem 'will_paginate', '2.3.16'
 gem 'paperclip', '2.7.5'
-gem 'wicked_pdf', '0.7.0'
+gem 'wicked_pdf', '0.9.7'
 gem 'xss_terminate'
 gem 'translator', '1.0.0'
 gem 'declarative_authorization'
