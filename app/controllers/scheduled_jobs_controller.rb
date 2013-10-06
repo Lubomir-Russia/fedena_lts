@@ -18,23 +18,22 @@
 class ScheduledJobsController < ApplicationController
   before_filter :login_required
   filter_access_to :all
+
   def index
     @jobs = Delayed::Job.all
     @all_jobs = @jobs.dup
-    unless params[:job_object].nil? and params[:job_type].nil?
+    if params[:job_object] && params[:job_type]
       @jobs = []
-      unless params[:job_type].nil?
-        @job_type = params[:job_object].to_s+"/"+params[:job_type].to_s
+      if params[:job_type]
+        @job_type = params[:job_object].to_s + "/" + params[:job_type].to_s
         @all_jobs.each do|j|
           h = j.handler
-          unless h.nil?
+          if h.present?
             obj = j.payload_object.class.name
             if j.payload_object.respond_to?("job_type")
               type = j.payload_object.job_type
               j_type = "#{obj}/#{type}"
-              if j_type == @job_type
-                @jobs.push j
-              end
+              @jobs.push j if j_type == @job_type
             end
           end
         end
@@ -42,15 +41,12 @@ class ScheduledJobsController < ApplicationController
         @job_type = params[:job_object].to_s
         @all_jobs.each do|j|
           h = j.handler
-          unless h.nil?
+          if h.present?
             obj = j.payload_object.class.name
-            if obj == @job_type
-              @jobs.push j
-            end
+            @jobs.push j if obj == @job_type
           end
         end
       end
     end
   end
-
 end

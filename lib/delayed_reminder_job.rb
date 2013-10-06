@@ -17,6 +17,8 @@
 # limitations under the License.
 class DelayedReminderJob
 
+  attr_accessor :job_type
+
   def initialize(*args)
     opts = args.extract_options!
     @sender_id = opts[:sender_id]
