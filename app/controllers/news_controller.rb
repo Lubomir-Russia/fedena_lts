@@ -22,10 +22,10 @@ class NewsController < ApplicationController
   def add
     @news = News.new(params[:news])
     @news.author = current_user
-    if request.post? and @news.save
+    if request.post? && @news.save
       sms_setting = SmsSetting.new
       if sms_setting.application_sms_active
-        students = Student.find(:all,:select=>'phone2',:conditions=>'is_sms_enabled = true')
+        students = Student.find(:all, :select => 'phone2', :conditions => { :is_sms_enabled => true })
       end
       flash[:notice] = "#{t('flash1')}"
       redirect_to :controller => 'news', :action => 'view', :id => @news.id
@@ -35,7 +35,7 @@ class NewsController < ApplicationController
   def add_comment
     @cmnt = NewsComment.new(params[:comment])
     @cmnt.author = current_user
-    @cmnt.is_approved =true if @current_user.privileges.include?(Privilege.find_by_name('ManageNews')) || @current_user.admin?
+    @cmnt.is_approved = true if @current_user.privileges.include?(Privilege.find_by_name('ManageNews')) || @current_user.admin?
     @config = Configuration.find_by_config_key('EnableNewsCommentModeration')
     @cmnt.save
   end
@@ -57,7 +57,7 @@ class NewsController < ApplicationController
 
   def edit
     @news = News.find(params[:id])
-    if request.post? and @news.update_attributes(params[:news])
+    if request.post? && @news.update_attributes(params[:news])
       flash[:notice] = "#{t('flash3')}"
       redirect_to :controller => 'news', :action => 'view', :id => @news.id
     end
@@ -67,14 +67,14 @@ class NewsController < ApplicationController
     @current_user = current_user
     @news = []
     if request.get?
-      @news = News.title_like_all params[:query].split unless params[:query].nil?
+      @news = News.title_like_all params[:query].split if params[:query]
     end
   end
 
   def search_news_ajax
     @news = nil
     conditions = ["title LIKE ?", "%#{params[:query]}%"]
-    @news = News.find(:all, :conditions => conditions) unless params[:query] == ''
+    @news = News.find(:all, :conditions => conditions) if params[:query].present?
     render :layout => false
   end
 
@@ -88,8 +88,8 @@ class NewsController < ApplicationController
 
   def comment_approved
     @comment = NewsComment.find(params[:id])
-    status=@comment.is_approved ? false : true
-    @comment.update_attributes(:is_approved=>status)
+    status = @comment.is_approved ? false : true
+    @comment.update_attributes(:is_approved => status)
     render :update do |page|
       page.reload
     end

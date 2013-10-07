@@ -349,4 +349,14 @@ FactoryGirl.define do
     event    { Factory.create(:event) }
     batch    { Factory.create(:batch) }
   end
+
+  factory :news do
+    sequence(:title)   { |n| "news title #{n}" }
+    sequence(:content) { |n| "news content #{n}" }
+  end
+
+  factory :news_comment do
+    news
+    sequence(:content) { |n| "news comment #{n}" }
+  end
 end
