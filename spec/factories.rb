@@ -121,10 +121,12 @@ FactoryGirl.define do
   end
 
   factory :employee_leave_type do
-    name      'employ leave type name'
+    sequence(:name) { |n| "ELT Name #{n}" }
     sequence(:code) { |n| "elt code#{n}" }
     max_leave_count    50
   end
+
+  factory :employee_leave do; end
 
   factory :employee_attendance do
     employee_leave_type { association(:employee_leave_type) }
