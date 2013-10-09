@@ -323,6 +323,7 @@ FactoryGirl.define do
 
   factory :assessment_score do; end
   factory :grouped_exam_report do; end
+  factory :subject_amount do; end
 
   factory :finance_fee_collection do
     sequence(:name)  { |n| "FFC#{n}" }

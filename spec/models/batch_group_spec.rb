@@ -10,7 +10,7 @@ describe BatchGroup do
 
   describe '#has_active_batches?' do
     let(:batch_group) do
-      bg = FactoryGirl.create(:batch_group)
+      bg = FactoryGirl.create(:batch_group, :batch_ids => [batch.id])
       FactoryGirl.create(:grouped_batch, :batch => batch, :batch_group => bg)
       bg
     end
@@ -39,5 +39,18 @@ describe BatchGroup do
       end
     end
 
+  end
+
+  describe '#check_batch_ids' do
+    let(:batch) { FactoryGirl.create(:batch) }
+    let!(:batch_group) { FactoryGirl.create(:batch_group, :batch_ids => [batch.id]) }
+
+    context 'batch_ids is empty' do
+      before { batch_group.batch_ids = [] }
+
+      it 'is invalid' do
+        batch_group.should be_invalid
+      end
+    end
   end
 end

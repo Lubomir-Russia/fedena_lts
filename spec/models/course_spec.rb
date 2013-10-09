@@ -83,8 +83,9 @@ describe Course do
 
     context 'with active batches' do
       before do
+        @batch = FactoryGirl.create(:batch)
         @course = FactoryGirl.create(:course)
-        @batch_groups = FactoryGirl.create(:batch_group, :course => @course)
+        @batch_groups = FactoryGirl.create(:batch_group, :batch_ids => [@batch.id], :course => @course)
         @batch_groups.batches = @course.batches
       end
 

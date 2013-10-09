@@ -21,9 +21,17 @@ class BatchGroup < ActiveRecord::Base
   has_many :batches, :through => :grouped_batches
 
   validates_presence_of :name, :course_id
+  validate :check_batch_ids
 
   def has_active_batches?
     batches.any? { |b| b.is_active? && !b.is_deleted? }
+  end
+
+  private
+  def check_batch_ids
+    if batch_ids.empty?
+      errors.add(:base, "Atleast one batch must be selected.")
+    end
   end
 
 end

@@ -51,7 +51,7 @@ class CoursesController < ApplicationController
       @subject_amount = @course.subject_amounts.build(params[:subject_amount])
       if @subject_amount.save
         @subject_amounts = @course.subject_amounts.reject{|sa| sa.new_record?}
-        flash[:notice] = "Subject amount saved successfully"
+        flash[:notice] = 'Subject amount saved successfully'
         redirect_to assign_subject_amount_courses_path(:id => @course.id)
       else
         render :assign_subject_amount
@@ -65,7 +65,7 @@ class CoursesController < ApplicationController
     @subjects = @course.batches.map(&:subjects).flatten.compact.map(&:code).compact.flatten.uniq
     if request.post?
       if @subject_amount.update_attributes(params[:subject_amount])
-        flash[:notice] = "Subject amount has been updated successfully"
+        flash[:notice] = 'Subject amount has been updated successfully'
         redirect_to assign_subject_amount_courses_path(:id => @subject_amount.course_id)
       else
         render :edit_subject_amount
@@ -77,7 +77,7 @@ class CoursesController < ApplicationController
     subject_amount = SubjectAmount.find(params[:subject_amount_id])
     course_id = subject_amount.course_id
     subject_amount.destroy
-    flash[:notice] = "Subject amount has been destroyed sucessfully"
+    flash[:notice] = 'Subject amount has been destroyed sucessfully'
     redirect_to assign_subject_amount_courses_path(:id => course_id)
   end
 
@@ -88,40 +88,34 @@ class CoursesController < ApplicationController
   def grouped_batches
     @course = Course.find(params[:id])
     @batch_groups = @course.batch_groups
-    @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id=>b.id)}
+    @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id => b.id)}
     @batch_group = BatchGroup.new
   end
 
   def create_batch_group
+
     @batch_group = BatchGroup.new(params[:batch_group])
     @course = Course.find(params[:course_id])
     @batch_group.course_id = @course.id
-    @error=false
-    if params[:batch_ids].blank?
-      @error=true
-    end
-    if @batch_group.valid? and @error==false
-      @batch_group.save
+    @batch_group.batch_ids = params[:batch_ids]
+    if @batch_group.save
       batches = params[:batch_ids]
       batches.each do|batch|
-        GroupedBatch.create(:batch_group_id=>@batch_group.id,:batch_id=>batch)
+        GroupedBatch.create(:batch_group_id => @batch_group.id, :batch_id => batch)
       end
       @batch_group = BatchGroup.new
       @batch_groups = @course.batch_groups
-      @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id=>b.id)}
+      @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id => b.id)}
       render(:update) do|page|
-        page.replace_html "category-list", :partial=>"batch_groups"
-        page.replace_html 'flash', :text=>'<p class="flash-msg"> Batch Group created successfully. </p>'
-        page.replace_html 'errors', :partial=>"form_errors"
-        page.replace_html 'class_form', :partial=>"batch_group_form"
+        page.replace_html 'category-list', :partial => 'batch_groups'
+        page.replace_html 'flash', :text => '<p class="flash-msg"> Batch Group created successfully. </p>'
+        page.replace_html 'errors', :partial => 'form_errors'
+        page.replace_html 'class_form', :partial => 'batch_group_form'
       end
     else
-      if params[:batch_ids].blank?
-        @batch_group.errors.add_to_base "Atleast one batch must be selected."
-      end
       render(:update) do|page|
-        page.replace_html 'errors', :partial=>'form_errors'
-        page.replace_html 'flash', :text=>""
+        page.replace_html 'errors', :partial => 'form_errors'
+        page.replace_html 'flash', :text => ''
       end
     end
   end
@@ -129,46 +123,39 @@ class CoursesController < ApplicationController
   def edit_batch_group
     @batch_group = BatchGroup.find(params[:id])
     @course = @batch_group.course
-    @assigned_batches = @course.active_batches.reject{|b| (!GroupedBatch.exists?(:batch_id=>b.id,:batch_group_id=>@batch_group.id))}
-    @batches = @course.active_batches.reject{|b| (GroupedBatch.exists?(:batch_id=>b.id))}
+    @assigned_batches = @course.active_batches.reject{|b| (!GroupedBatch.exists?(:batch_id => b.id, :batch_group_id => @batch_group.id))}
+    @batches = @course.active_batches.reject{|b| (GroupedBatch.exists?(:batch_id => b.id))}
     @batches = @assigned_batches + @batches
     render(:update) do|page|
-      page.replace_html "class_form", :partial=>"batch_group_edit_form"
-      page.replace_html 'errors', :partial=>'form_errors'
-      page.replace_html 'flash', :text=>""
+      page.replace_html 'class_form', :partial => 'batch_group_edit_form'
+      page.replace_html 'errors', :partial => 'form_errors'
+      page.replace_html 'flash', :text => ''
     end
   end
 
   def update_batch_group
     @batch_group = BatchGroup.find(params[:id])
+    @batch_group.batch_ids = params[:batch_ids]
     @course = @batch_group.course
-    unless params[:batch_ids].blank?
-      if @batch_group.update_attributes(params[:batch_group])
-        @batch_group.grouped_batches.map{|b| b.destroy}
-        batches = params[:batch_ids]
-        batches.each do|batch|
-          GroupedBatch.create(:batch_group_id=>@batch_group.id,:batch_id=>batch)
-        end
-        @batch_group = BatchGroup.new
-        @batch_groups = @course.batch_groups
-        @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id=>b.id)}
-        render(:update) do|page|
-          page.replace_html "category-list", :partial=>"batch_groups"
-          page.replace_html 'flash', :text=>'<p class="flash-msg"> Batch Group updated successfully. </p>'
-          page.replace_html 'errors', :partial=>"form_errors"
-          page.replace_html 'class_form', :partial=>"batch_group_form"
-        end
-      else
-        render(:update) do|page|
-          page.replace_html 'errors', :partial=>'form_errors'
-          page.replace_html 'flash', :text=>""
-        end
+    if @batch_group.update_attributes(params[:batch_group])
+      @batch_group.grouped_batches.map{|b| b.destroy}
+      batches = params[:batch_ids]
+      batches.each do|batch|
+        GroupedBatch.create(:batch_group_id => @batch_group.id, :batch_id => batch)
+      end
+      @batch_group = BatchGroup.new
+      @batch_groups = @course.batch_groups
+      @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id => b.id)}
+      render(:update) do|page|
+        page.replace_html 'category-list', :partial => 'batch_groups'
+        page.replace_html 'flash', :text => '<p class="flash-msg"> Batch Group updated successfully. </p>'
+        page.replace_html 'errors', :partial => 'form_errors'
+        page.replace_html 'class_form', :partial => 'batch_group_form'
       end
     else
-      @batch_group.errors.add_to_base("Atleat one Batch must be selected.")
       render(:update) do|page|
-        page.replace_html 'errors', :partial=>'form_errors'
-        page.replace_html 'flash', :text=>""
+        page.replace_html 'errors', :partial => 'form_errors'
+        page.replace_html 'flash', :text => ''
       end
     end
   end
@@ -181,18 +168,18 @@ class CoursesController < ApplicationController
     @batch_groups = @course.batch_groups
     @batches = @course.active_batches.reject{|b| GroupedBatch.exists?(:batch_id=>b.id)}
     render(:update) do|page|
-      page.replace_html "category-list", :partial=>"batch_groups"
-      page.replace_html 'flash', :text=>'<p class="flash-msg"> Batch Group deleted successfully. </p>'
-      page.replace_html 'errors', :partial=>"form_errors"
-      page.replace_html 'class_form', :partial=>"batch_group_form"
+      page.replace_html 'category-list', :partial => 'batch_groups'
+      page.replace_html 'flash', :text => '<p class="flash-msg"> Batch Group deleted successfully. </p>'
+      page.replace_html 'errors', :partial => 'form_errors'
+      page.replace_html 'class_form', :partial => 'batch_group_form'
     end
   end
 
   def update_batch
-    @batch = Batch.find_all_by_course_id(params[:course_name], :conditions => { :is_deleted => false, :is_active => true })
+    @batch = Batch.find_all_by_course_id_and_is_deleted_and_is_active(params[:course_name], false, true)
 
     render(:update) do |page|
-      page.replace_html 'update_batch', :partial=>'update_batch'
+      page.replace_html 'update_batch', :partial => 'update_batch'
     end
 
   end
@@ -201,9 +188,9 @@ class CoursesController < ApplicationController
     @course = Course.new params[:course]
     if @course.save
       flash[:notice] = "#{t('flash1')}"
-      redirect_to :action=>'manage_course'
+      redirect_to :action => 'manage_course'
     else
-      @grade_types=Course.grading_types_as_options
+      @grade_types = Course.grading_types_as_options
       #      gpa = Configuration.find_by_config_key("GPA").config_value
       #      if gpa == "1"
       #        @grade_types << "GPA"
@@ -217,7 +204,7 @@ class CoursesController < ApplicationController
   end
 
   def edit
-    @grade_types=Course.grading_types_as_options
+    @grade_types = Course.grading_types_as_options
     #    @grade_types=[]
     #    gpa = Configuration.find_by_config_key("GPA").config_value
     #    if gpa == "1"
@@ -237,7 +224,7 @@ class CoursesController < ApplicationController
       flash[:notice] = "#{t('flash2')}"
       redirect_to :action=>'manage_course'
     else
-      @grade_types=Course.grading_types_as_options
+      @grade_types = Course.grading_types_as_options
       render 'edit'
     end
   end
@@ -245,11 +232,11 @@ class CoursesController < ApplicationController
   def destroy
     if @course.batches.active.empty?
       @course.inactivate
-      flash[:notice]="#{t('flash3')}"
+      flash[:notice] = "#{t('flash3')}"
       redirect_to :action=>'manage_course'
     else
-      flash[:warn_notice]="<p>#{t('courses.flash4')}</p>"
-      redirect_to :action=>'manage_course'
+      flash[:warn_notice] = "<p>#{t('courses.flash4')}</p>"
+      redirect_to :action => 'manage_course'
     end
 
   end
@@ -263,6 +250,4 @@ class CoursesController < ApplicationController
   def find_course
     @course = Course.find params[:id]
   end
-
-
 end
