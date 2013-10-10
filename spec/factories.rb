@@ -98,6 +98,13 @@ FactoryGirl.define do
     desc               'Description'
   end
 
+  factory :observation do
+    name               'Observation Name'
+    desc               'Observation Description'
+    is_active          true
+    observation_group
+  end
+
   factory :fa_group do
     name    'fa group name'
     desc    'description'
