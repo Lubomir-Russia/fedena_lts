@@ -268,6 +268,7 @@ FactoryGirl.define do
   factory :ranking_level do
     sequence(:name)   { |n| "rank#{n}" }
     marks             90
+    priority          10
   end
 
   factory :fee_collection_discount do
