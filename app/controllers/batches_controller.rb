@@ -33,28 +33,28 @@ class BatchesController < ApplicationController
 
     if @batch.save
       flash[:notice] = "#{t('flash1')}"
-      unless params[:import_subjects].nil?
+      if params[:import_subjects].present?
         msg = []
         msg << "<ol>"
         course_id = @batch.course_id
-        @previous_batch = Batch.find(:first, :order => 'id DESC', :conditions => ["batches.id < ? AND batches.is_deleted = ? AND course_id = ?", @batch.id, false, course_id],
+        @previous_batch = Batch.first(:order => 'id DESC', :conditions => ["batches.id < ? AND batches.is_deleted = ? AND course_id = ?", @batch.id, false, course_id],
           :joins => ["INNER JOIN subjects ON subjects.batch_id = batches.id AND subjects.is_deleted = ?", false])
-        unless @previous_batch.blank?
-          subjects = Subject.find_all_by_batch_id(@previous_batch.id,:conditions=>'is_deleted=false')
+        if @previous_batch.present?
+          subjects = Subject.find_all_by_batch_id(@previous_batch.id, :conditions => {:is_deleted => false})
           subjects.each do |subject|
             if subject.elective_group_id.nil?
-              Subject.create(:name=>subject.name,:code=>subject.code,:batch_id=>@batch.id,:no_exams=>subject.no_exams,
-                :max_weekly_classes=>subject.max_weekly_classes,:elective_group_id=>subject.elective_group_id,:credit_hours=>subject.credit_hours,:is_deleted=>false)
+              Subject.create(:name => subject.name, :code => subject.code, :batch_id => @batch.id, :no_exams => subject.no_exams,
+                :max_weekly_classes => subject.max_weekly_classes, :elective_group_id => subject.elective_group_id, :credit_hours => subject.credit_hours, :is_deleted => false)
             else
-              elect_group_exists = ElectiveGroup.find_by_name_and_batch_id(ElectiveGroup.find(subject.elective_group_id).name,@batch.id)
+              elect_group_subject = ElectiveGroup.find_by_id(subject.elective_group_id)
+              elect_group_exists = ElectiveGroup.find_by_name_and_batch_id(elect_group_subject.name, @batch.id)
               if elect_group_exists.nil?
-                elect_group = ElectiveGroup.create(:name=>ElectiveGroup.find(subject.elective_group_id).name,
-                  :batch_id=>@batch.id,:is_deleted=>false)
-                Subject.create(:name=>subject.name,:code=>subject.code,:batch_id=>@batch.id,:no_exams=>subject.no_exams,
-                  :max_weekly_classes=>subject.max_weekly_classes,:elective_group_id=>elect_group.id,:credit_hours=>subject.credit_hours,:is_deleted=>false)
+                elect_group = ElectiveGroup.create(:name => elect_group_subject.name, :batch_id => @batch.id, :is_deleted => false)
+                Subject.create(:name => subject.name, :code => subject.code, :batch_id => @batch.id, :no_exams => subject.no_exams,
+                  :max_weekly_classes => subject.max_weekly_classes, :elective_group_id => elect_group.id, :credit_hours => subject.credit_hours, :is_deleted => false)
               else
-                Subject.create(:name=>subject.name,:code=>subject.code,:batch_id=>@batch.id,:no_exams=>subject.no_exams,
-                  :max_weekly_classes=>subject.max_weekly_classes,:elective_group_id=>elect_group_exists.id,:credit_hours=>subject.credit_hours,:is_deleted=>false)
+                Subject.create(:name => subject.name, :code => subject.code, :batch_id => @batch.id, :no_exams => subject.no_exams,
+                  :max_weekly_classes => subject.max_weekly_classes, :elective_group_id => elect_group_exists.id, :credit_hours => subject.credit_hours, :is_deleted => false)
               end
             end
             msg << "<li>#{subject.name}</li>"
@@ -66,57 +66,61 @@ class BatchesController < ApplicationController
         end
       end
       flash[:subject_import] = msg unless msg.nil?
+
       err = ""
-      err1 = "<span style = 'margin-left:15px;font-size:15px,margin-bottom:20px;'><b>#{t('following_pblm_occured_while_saving_the_batch')}</b></span>"
-      unless params[:import_fees].nil?
+      err1 = "<span style = 'margin-left: 15px; font-size: 15px, margin-bottom: 20px;'><b>#{t('following_pblm_occured_while_saving_the_batch')}</b></span>"
+      if params[:import_fees].present?
         fee_msg = []
         course_id = @batch.course_id
-        @previous_batch = Batch.find(:first,:order=>'id desc', :conditions=>"batches.id < '#{@batch.id }' AND batches.is_deleted = 0 AND course_id = ' #{course_id }'",:joins=>"INNER JOIN finance_fee_categories ON finance_fee_categories.batch_id = batches.id  AND finance_fee_categories.is_deleted = 0 AND is_master= 1")
-        unless @previous_batch.blank?
+        @previous_batch = Batch.first(:order => 'id desc', :conditions => ["batches.id < ? AND batches.is_deleted = ? AND course_id = ?", @batch.id, false, course_id],
+            :joins => "INNER JOIN finance_fee_categories ON finance_fee_categories.batch_id = batches.id  AND finance_fee_categories.is_deleted = 0 AND is_master = 1")
+        if @previous_batch.present?
           fee_msg << "<ol>"
-          categories = FinanceFeeCategory.find_all_by_batch_id(@previous_batch.id,:conditions=>'is_deleted=false and is_master=true')
+          categories = FinanceFeeCategory.find_all_by_batch_id(@previous_batch.id, :conditions => {:is_deleted => false, :is_master =>true})
           categories.each do |c|
-            particulars = c.fee_particulars.all(:conditions=>"admission_no IS NULL AND student_id IS NULL AND is_deleted = 0")
-            particulars.reject!{|pt|pt.deleted_category}
+            particulars = c.fee_particulars.all(:conditions => {:admission_no => nil, :student_id => nil, :is_deleted => false})
+            particulars.reject!{ |pt|pt.deleted_category }
             batch_discounts = BatchFeeDiscount.find_all_by_finance_fee_category_id(c.id)
             category_discounts = StudentCategoryFeeDiscount.find_all_by_finance_fee_category_id(c.id)
-            unless particulars.blank? and batch_discounts.blank? and category_discounts.blank?
-              new_category = FinanceFeeCategory.new(:name=>c.name,:description=>c.description,:batch_id=>@batch.id,:is_deleted=>false,:is_master=>true)
+            if particulars.any? || batch_discounts.any? || category_discounts.any?
+              new_category = FinanceFeeCategory.new(:name => c.name, :description => c.description, :batch_id => @batch.id, :is_deleted => false, :is_master => true)
               if new_category.save
                 fee_msg << "<li>#{c.name}</li>"
                 particulars.each do |p|
-                  new_particular = FinanceFeeParticular.new(:name=>p.name,:description=>p.description,:amount=>p.amount,:student_category_id=>p.student_category_id,\
-                      :admission_no=>p.admission_no,:student_id=>p.student_id)
+                  new_particular = FinanceFeeParticular.new(:name => p.name, :description => p.description, :amount => p.amount, :student_category_id => p.student_category_id, :admission_no => p.admission_no, :student_id => p.student_id)
                   new_particular.finance_fee_category_id = new_category.id
                   unless new_particular.save
                     err += "<li> #{t('particular')} #{p.name} #{t('import_failed')}.</li>"
                   end
                 end
                 batch_discounts.each do |disc|
+
                   discount_attributes = disc.attributes
                   discount_attributes.delete "type"
                   discount_attributes.delete "finance_fee_category_id"
                   discount_attributes.delete "receiver_id"
-                  discount_attributes["receiver_id"]= @batch.id
-                  discount_attributes["finance_fee_category_id"]= new_category.id
-                  unless BatchFeeDiscount.create(discount_attributes)
-                    err += "<li> #{t('discount ')} #{disc.name} #{t('import_failed')}.</li>"
+                  discount_attributes["receiver_id"] = @batch.id
+                  discount_attributes["finance_fee_category_id"] = new_category.id
+                  new_batch_fee_discount = BatchFeeDiscount.new(discount_attributes)
+                  unless new_batch_fee_discount.save
+                    err += "<li> #{t('discount')} #{disc.name} #{t('import_failed')}.</li>"
                   end
                 end
                 category_discounts.each do |disc|
                   discount_attributes = disc.attributes
                   discount_attributes.delete "type"
                   discount_attributes.delete "finance_fee_category_id"
-                  discount_attributes["finance_fee_category_id"]= new_category.id
-                  unless StudentCategoryFeeDiscount.create(discount_attributes)
-                    err += "<li>  #{t(' discount ')} #{disc.name} #{t(' import_failed')}.</li><br/>"
+                  discount_attributes["finance_fee_category_id"] = new_category.id
+                  new_student_category_fee_discount = StudentCategoryFeeDiscount.new(discount_attributes)
+                  unless new_student_category_fee_discount.save
+                    err += "<li> #{t('discount')} #{disc.name} #{t('import_failed')}.</li><br/>"
                   end
                 end
               else
-                err += "<li>  #{t('category')} #{c.name}1 #{t('import_failed')}.</li>"
+                err += "<li> #{t('category')} #{c.name}1 #{t('import_failed')}.</li>"
               end
             else
-              err += "<li>  #{t('category')} #{c.name}2 #{t('import_failed')}.</li>"
+              err += "<li> #{t('category')} #{c.name}2 #{t('import_failed')}.</li>"
             end
           end
           fee_msg << "</ol>"
@@ -130,15 +134,10 @@ class BatchesController < ApplicationController
 
       redirect_to [@course, @batch]
     else
-      @grade_types=[]
-      gpa = Configuration.find_by_config_key("GPA").config_value
-      if gpa == "1"
-        @grade_types << "GPA"
-      end
-      cwa = Configuration.find_by_config_key("CWA").config_value
-      if cwa == "1"
-        @grade_types << "CWA"
-      end
+      @grade_types = []
+      @grade_types << "GPA" if Configuration.has_gpa?
+      @grade_types << "CWA" if Configuration.has_cwa?
+
       render 'new'
     end
   end
@@ -161,7 +160,7 @@ class BatchesController < ApplicationController
   end
 
   def destroy
-    if @batch.students.empty? and @batch.subjects.empty?
+    if @batch.students.empty? && @batch.subjects.empty?
       @batch.inactivate
       flash[:notice] = "#{t('flash4')}"
       redirect_to @course
@@ -175,7 +174,7 @@ class BatchesController < ApplicationController
   def assign_tutor
     @batch = Batch.find_by_id(params[:id])
     @assigned_employee = @batch.employee_id.split(",") unless @batch.employee_id.nil?
-    @departments = EmployeeDepartment.find(:all)
+    @departments = EmployeeDepartment.all
   end
 
   def update_employees
@@ -189,14 +188,14 @@ class BatchesController < ApplicationController
   def assign_employee
     @batch = Batch.find_by_id(params[:batch_id])
     @employees = Employee.find_all_by_employee_department_id(params[:department_id])
-    unless @batch.employee_id.blank?
+    if @batch.employee_id.present?
       @assigned_emps = @batch.employee_id.split(',')
     else
       @assigned_emps = []
     end
     @assigned_emps.push(params[:id].to_s)
-    @batch.update_attributes :employee_id => @assigned_emps.join(",")
-    @assigned_employee = @assigned_emps.join(",")
+    @batch.update_attributes(:employee_id => @assigned_emps.join(","))
+    @assigned_employee = @assigned_emps
     render :update do |page|
       page.replace_html 'employee-list', :partial => 'employee_list'
       page.replace_html 'tutor-list', :partial => 'assigned_tutor_list'
@@ -209,7 +208,7 @@ class BatchesController < ApplicationController
     @assigned_emps = @batch.employee_id.split(',')
     @removed_emps = @assigned_emps.delete(params[:id].to_s)
     @assigned_emps = @assigned_emps.join(",")
-    @batch.update_attributes :employee_id =>@assigned_emps
+    @batch.update_attributes :employee_id => @assigned_emps
     render :update do |page|
       page.replace_html 'employee-list', :partial => 'employee_list'
       page.replace_html 'tutor-list', :partial => 'assigned_tutor_list'
@@ -218,16 +217,14 @@ class BatchesController < ApplicationController
 
   def batches_ajax
     if request.xhr?
-      @course = Course.find_by_id(params[:course_id]) unless params[:course_id].blank?
+      @course = Course.find_by_id(params[:course_id]) if params[:course_id].present?
       @batches = @course.batches.active if @course
-      if params[:type]=="list"
-        render :partial=>"list"
-      end
+      render :partial => "list" if params[:type] == "list"
     end
   end
   private
   def init_data
-    @batch = Batch.find params[:id] if ['show', 'edit', 'update', 'destroy'].include? action_name
-    @course = Course.find params[:course_id]
+    @batch = Batch.find_by_id(params[:id]) if ['show', 'edit', 'update', 'destroy'].include? action_name
+    @course = Course.find_by_id(params[:course_id])
   end
 end
