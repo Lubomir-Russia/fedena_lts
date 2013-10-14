@@ -241,6 +241,18 @@ FactoryGirl.define do
     code 'forad'
   end
 
+  factory :sms_setting do
+    settings_key    'ApplicationEnabled'
+    is_enabled       true
+  end
+
+  factory :sms_message do
+    body    'SMS Message Body'
+  end
+
+  factory :configuration do; end
+  factory :sms_log do; end
+
   factory :employee_category do
     sequence(:name)   { |n| "emp_category#{n}" }
     sequence(:prefix) { |n| "forad#{n}" }
