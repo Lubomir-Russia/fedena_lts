@@ -323,6 +323,10 @@ FactoryGirl.define do
 
   factory :assessment_score do; end
   factory :grouped_exam_report do; end
+  factory :configuration do; end
+  factory :sms_setting do; end
+  factory :privilege_tag do; end
+  factory :privilege do; end
 
   factory :finance_fee_collection do
     sequence(:name)  { |n| "FFC#{n}" }

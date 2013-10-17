@@ -23,34 +23,34 @@ class UserController < ApplicationController
   before_filter :check_if_loggedin, :only => [:login]
   #  filter_access_to :edit_privilege
   def choose_layout
-    return 'login' if action_name == 'login' or action_name == 'set_new_password'
+    return 'login' if action_name == 'login' || action_name == 'set_new_password'
     return 'forgotpw' if action_name == 'forgot_password'
     return 'dashboard' if action_name == 'dashboard'
     'application'
   end
 
   def all
-    @users = User.active.all
+    @users = User.active
   end
 
   def list_user
     if params[:user_type] == 'Admin'
-      @users = User.active.find(:all, :conditions => {:admin => true}, :order => 'first_name ASC')
+      @users = User.active.all(:conditions => {:admin => true}, :order => 'first_name ASC')
       render(:update) do |page|
-        page.replace_html 'users', :partial=> 'users'
+        page.replace_html 'users', :partial => 'users'
         page.replace_html 'employee_user', :text => ''
         page.replace_html 'student_user', :text => ''
       end
     elsif params[:user_type] == 'Employee'
       render(:update) do |page|
         hr = Configuration.find_by_config_value("HR")
-        unless hr.nil?
-          page.replace_html 'employee_user', :partial=> 'employee_user'
+        if hr.present?
+          page.replace_html 'employee_user', :partial => 'employee_user'
           page.replace_html 'users', :text => ''
           page.replace_html 'student_user', :text => ''
         else
           @users = User.active.find_all_by_employee(1)
-          page.replace_html 'users', :partial=> 'users'
+          page.replace_html 'users', :partial => 'users'
           page.replace_html 'employee_user', :text => ''
           page.replace_html 'student_user', :text => ''
         end
@@ -67,10 +67,10 @@ class UserController < ApplicationController
         page.replace_html 'users', :text => ''
         page.replace_html 'employee_user', :text => ''
       end
-    elsif params[:user_type] == ''
-      @users = ""
+    elsif !params[:user_type].present?
+      @users = ''
       render(:update) do |page|
-        page.replace_html 'users', :partial=> 'users'
+        page.replace_html 'users', :partial => 'users'
         page.replace_html 'employee_user', :text => ''
         page.replace_html 'student_user', :text => ''
       end
@@ -79,31 +79,30 @@ class UserController < ApplicationController
 
   def list_employee_user
     emp_dept = params[:dept_id]
-    @employee = Employee.find_all_by_employee_department_id(emp_dept, :order =>'first_name ASC')
+    @employee = Employee.find_all_by_employee_department_id(emp_dept, :order => 'first_name ASC')
     @users = @employee.collect { |employee| employee.user}
     @users.delete(nil)
-    render(:update) {|page| page.replace_html 'users', :partial=> 'users'}
+    render(:update) {|page| page.replace_html 'users', :partial => 'users'}
   end
 
   def list_student_user
     batch = params[:batch_id]
-    @student = Student.find_all_by_batch_id(batch, :conditions => { :is_active => true },:order =>'first_name ASC')
+    @student = Student.find_all_by_batch_id(batch, :conditions => { :is_active => true }, :order => 'first_name ASC')
     @users = @student.collect { |student| student.user}
     @users.delete(nil)
-    render(:update) {|page| page.replace_html 'users', :partial=> 'users'}
+    render(:update) {|page| page.replace_html 'users', :partial => 'users'}
   end
 
   def list_parent_user
     batch = params[:batch_id]
-    @guardian = Guardian.find(:all, :select=>'guardians.*',:joins=>'INNER JOIN students ON students.id = guardians.ward_id', :conditions => 'students.batch_id = ' + batch + ' AND is_active=1',:order =>'first_name ASC')
+    @guardian = Guardian.all(:select => 'guardians.*', :joins => 'INNER JOIN students ON students.id = guardians.ward_id', :conditions => ["students.batch_id = ? AND is_active = ?", batch, true],:order => 'first_name ASC')
     users = @guardian.collect { |g| g.user}
     users.compact!
-    @users  = users.paginate(:page=>params[:page],:per_page=>20)
-    render(:update) {|page| page.replace_html 'users', :partial=> 'users'}
+    @users  = users.paginate(:page => params[:page], :per_page => 20)
+    render(:update) {|page| page.replace_html 'users', :partial => 'users'}
   end
 
   def change_password
-
     if request.post?
       @user = current_user
       if User.authenticate?(@user.username, params[:user][:old_password])
@@ -128,23 +127,21 @@ class UserController < ApplicationController
     @user = User.active.find_by_username(params[:id])
 
     if request.post?
-      if params[:user][:new_password]=='' and params[:user][:confirm_password]==''
-        flash[:warn_notice]= "<p>#{t('flash6')}</p>"
-      else
+      if params[:user][:new_password].present? && params[:user][:confirm_password].present?
         if params[:user][:new_password] == params[:user][:confirm_password]
           @user.password = params[:user][:new_password]
           if @user.update_attributes(:password => @user.password,:role => @user.role_name)
             flash[:notice]= "#{t('flash7')}"
-            redirect_to :action=>"edit", :id=>@user.username
+            redirect_to :action => "edit", :id => @user.username
           else
             render :user_change_password
           end
         else
-          flash[:warn_notice] =  "<p>#{t('flash10')}</p>"
+          flash[:warn_notice] = "<p>#{t('flash10')}</p>"
         end
+      else
+        flash[:warn_notice]= "<p>#{t('flash6')}</p>"
       end
-
-
     end
   end
 
@@ -153,23 +150,19 @@ class UserController < ApplicationController
 
     @user = User.new(params[:user])
     if request.post?
-
       if @user.save
         flash[:notice] = "#{t('flash17')}"
         redirect_to :controller => 'user', :action => 'edit', :id => @user.username
       else
         flash[:notice] = "#{t('flash16')}"
       end
-
     end
   end
 
   def delete
-    @user = User.active.find_by_username(params[:id],:conditions=>"admin = 1")
-    unless @user.nil?
-      if @user.employee_record.nil?
-        flash[:notice] = "#{t('flash12')}" if @user.destroy
-      end
+    @user = User.active.find_by_username(params[:id], :conditions => "admin = 1")
+    if @user.present? && @user.employee_record.nil? && @user.destroy
+      flash[:notice] = "#{t('flash12')}"
     end
     redirect_to :controller => 'user'
   end
@@ -180,22 +173,20 @@ class UserController < ApplicationController
     @employee = @user.employee_record if ["#{t('admin')}","#{t('employee_text')}"].include?(@user.role_name)
     if @user.student?
       @student = Student.find_by_admission_no(@user.username)
-    end
-    if @user.parent?
+    elsif @user.parent?
       @student = Student.find_by_admission_no(@user.username[1..@user.username.length])
     end
     @first_time_login = Configuration.get_config_value('FirstTimeLoginEnable')
-    if  session[:user_id].present? and @first_time_login == "1" and @user.is_first_login != false
+    if session[:user_id].present? && @first_time_login == "1" && @user.is_first_login?
       flash[:notice] = "#{t('first_login_attempt')}"
       redirect_to :controller => "user",:action => "first_login_change_password",:id => @user.username
     end
   end
 
-
   def edit
     @user = User.active.find_by_username(params[:id])
     @current_user = current_user
-    if request.post? and @user.update_attributes(params[:user])
+    if request.post? && @user.update_attributes(params[:user])
       flash[:notice] = "#{t('flash13')}"
       redirect_to :controller => 'user', :action => 'profile', :id => @user.username
     end
@@ -205,9 +196,10 @@ class UserController < ApplicationController
     #    flash[:notice]="You do not have permission to access forgot password!"
     #    redirect_to :action=>"login"
     @network_state = Configuration.find_by_config_key("NetworkState")
-    if request.post? and params[:reset_password]
-      if user = User.active.find_by_username(params[:reset_password][:username])
-        unless user.email.blank?
+    if request.post? && params[:reset_password].present?
+      user = User.active.find_by_username(params[:reset_password][:username])
+      if user.present?
+        if user.email.present?
           user.reset_password_code = Digest::SHA1.hexdigest( "#{user.email}#{Time.now.to_s.split(//).sort_by {rand}.join}" )
           user.reset_password_code_until = 1.day.from_now
           user.role = user.role_name
@@ -218,7 +210,6 @@ class UserController < ApplicationController
           redirect_to :action => "index"
         else
           flash[:notice] = "#{t('flash20')}"
-          return
         end
       else
         flash[:notice] = "#{t('flash19')} #{params[:reset_password][:username]}"
@@ -226,25 +217,25 @@ class UserController < ApplicationController
     end
   end
 
-
   def login
     @institute = Configuration.find_by_config_key("LogoName")
+
     available_login_authes = FedenaPlugin::AVAILABLE_MODULES.select{|m| m[:name].classify.constantize.respond_to?("login_hook")}
-    selected_login_hook = available_login_authes.first if available_login_authes.count>=1
-    if selected_login_hook
-      authenticated_user = selected_login_hook[:name].classify.constantize.send("login_hook",self)
+    selected_login_hook = available_login_authes.first if available_login_authes.any?
+    if selected_login_hook.present?
+      authenticated_user = selected_login_hook[:name].classify.constantize.send("login_hook", self)
     else
-      if request.post? and params[:user]
+      if request.post? && params[:user]
         @user = User.new(params[:user])
-        user = User.active.find_by_username @user.username
-        if user.present? and User.authenticate?(@user.username, @user.password)
+        user = User.active.find_by_username(@user.username)
+        if user.present? && User.authenticate?(@user.username, @user.password)
           authenticated_user = user
         end
       end
     end
     if authenticated_user.present?
-      successful_user_login(authenticated_user) and return
-    elsif authenticated_user.blank? and request.post?
+      successful_user_login(authenticated_user)
+    elsif authenticated_user.nil? && request.post?
       flash[:notice] = "#{t('login_error_message')}"
     end
   end
@@ -252,23 +243,23 @@ class UserController < ApplicationController
   def first_login_change_password
     @user = User.active.find_by_username(params[:id])
     @setting = Configuration.get_config_value('FirstTimeLoginEnable')
-    if @setting == "1" and @user.is_first_login != false
+    if @setting == "1" && @user.is_first_login?
       if request.post?
         if params[:user][:new_password] == params[:user][:confirm_password]
-          if @user.update_attributes(:password => params[:user][:confirm_password],:is_first_login => false)
+          if @user.update_attributes(:password => params[:user][:confirm_password], :is_first_login => false)
             flash[:notice] = "#{t('password_update')}"
-            redirect_to :controller => "user",:action => "dashboard"
+            redirect_to :controller => "user", :action => "dashboard"
           else
             render :first_login_change_password
           end
         else
-          @user.errors.add('password','and confirm password doesnot match')
+          @user.errors.add(:password, 'and confirm password does not match')
           render :first_login_change_password
         end
       end
     else
       flash[:notice] = "#{t('not_applicable')}"
-      redirect_to :controller => "user",:action => "dashboard"
+      redirect_to :controller => "user", :action => "dashboard"
     end
   end
 
@@ -279,11 +270,11 @@ class UserController < ApplicationController
     session[:language] = nil
     flash[:notice] = "#{t('logged_out')}"
     available_login_authes = FedenaPlugin::AVAILABLE_MODULES.select{|m| m[:name].classify.constantize.respond_to?("logout_hook")}
-    selected_logout_hook = available_login_authes.first if available_login_authes.count>=1
-    if selected_logout_hook
-      selected_logout_hook[:name].classify.constantize.send("logout_hook",self,"/")
+    selected_logout_hook = available_login_authes.first if available_login_authes.any?
+    if selected_logout_hook.present?
+      selected_logout_hook[:name].classify.constantize.send("logout_hook", self, "/")
     else
-      redirect_to :controller => 'user', :action => 'login' and return
+      redirect_to :controller => 'user', :action => 'login'
     end
   end
 
@@ -292,11 +283,10 @@ class UserController < ApplicationController
     @current_user = current_user
     @username = @current_user.username if session[:user_id]
     @user = User.active.find_by_username(params[:id])
-    unless @user.nil?
+    if @user.present?
       @employee = Employee.find_by_employee_number(@user.username)
       @student = Student.find_by_admission_no(@user.username)
       @ward  = @user.parent_record if @user.parent
-
     else
       flash[:notice] = "#{t('flash14')}"
       redirect_to :action => 'dashboard'
@@ -304,9 +294,9 @@ class UserController < ApplicationController
   end
 
   def reset_password
-    user = User.active.find_by_reset_password_code(params[:id],:conditions=>"reset_password_code IS NOT NULL")
-    if user
-      if user.reset_password_code_until > Time.now
+    user = User.active.find_by_reset_password_code(params[:id], :conditions => "reset_password_code IS NOT NULL")
+    if user.present?
+      if user.reset_password_code_until > Time.current
         redirect_to :action => 'set_new_password', :id => user.reset_password_code
       else
         flash[:notice] = "#{t('flash1')}"
@@ -319,15 +309,15 @@ class UserController < ApplicationController
   end
 
   def search_user_ajax
-    unless params[:query].nil? or params[:query].empty? or params[:query] == ' '
+    if params[:query].present? && params[:query].any?
       #      if params[:query].length>= 3
       #        @user = User.first_name_or_last_name_or_username_begins_with params[:query].split
-      @user = User.active.find(:all,
+      @user = User.active.all(
         :conditions => "(first_name LIKE \"#{params[:query]}%\"
                        OR last_name LIKE \"#{params[:query]}%\"
                        OR (concat(first_name, \" \", last_name) LIKE \"#{params[:query]}%\")
                        OR username LIKE  \"#{params[:query]}\")",
-        :order => "first_name asc") unless params[:query] == ''
+        :order => "first_name asc")
       #      else
       #        @user = User.first_name_or_last_name_or_username_equals params[:query].split
       #      end
@@ -340,8 +330,8 @@ class UserController < ApplicationController
 
   def set_new_password
     if request.post?
-      user = User.active.find_by_reset_password_code(params[:id],:conditions=>"reset_password_code IS NOT NULL")
-      if user
+      user = User.active.find_by_reset_password_code(params[:id], :conditions => "reset_password_code IS NOT NULL")
+      if user.present?
         if params[:set_new_password][:new_password] === params[:set_new_password][:confirm_password]
           user.password = params[:set_new_password][:new_password]
           user.update_attributes(:password => user.password, :reset_password_code => nil, :reset_password_code_until => nil, :role => user.role_name)
@@ -366,15 +356,15 @@ class UserController < ApplicationController
     @finance = Configuration.find_by_config_value("Finance")
     @sms_setting = SmsSetting.application_sms_status
     @hr = Configuration.find_by_config_value("HR")
-    @privilege_tags=PrivilegeTag.find(:all,:order=>"priority ASC")
-    @user_privileges=@user.privileges
+    @privilege_tags = PrivilegeTag.all(:order => "priority ASC")
+    @user_privileges = @user.privileges
     if request.post?
       new_privileges = params[:user][:privilege_ids] if params[:user]
       new_privileges ||= []
       @user.privileges = Privilege.find_all_by_id(new_privileges)
       @user.clear_menu_cache
       flash[:notice] = "#{t('flash15')}"
-      redirect_to :action => 'profile',:id => @user.username
+      redirect_to :action => 'profile', :id => @user.username
     end
   end
 
@@ -385,7 +375,7 @@ class UserController < ApplicationController
     @employee = Employee.find_by_employee_number(@user.username)
     @employee ||= Employee.first if current_user.admin?
     @student = Student.find_by_admission_no(@user.username)
-    render :partial=>'header_link'
+    render :partial => 'header_link'
   end
 
 
