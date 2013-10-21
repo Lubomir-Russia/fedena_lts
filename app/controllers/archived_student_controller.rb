@@ -22,7 +22,7 @@ class ArchivedStudentController < ApplicationController
   def profile
     @current_user = current_user
     @archived_student = ArchivedStudent.find(params[:id])
-    @additional_fields = StudentAdditionalField.all(:conditions=>{:status => true})
+    @additional_fields = StudentAdditionalField.all(:conditions => {:status => true})
   end
 
   def show
@@ -35,7 +35,7 @@ class ArchivedStudentController < ApplicationController
 
   def guardians
     @archived_student = ArchivedStudent.find(params[:id])
-    @parents = ArchivedGuardian.find(:all, :conditions=>{:ward_id => @archived_student.id})
+    @parents = ArchivedGuardian.all(:conditions => {:ward_id => @archived_student.id})
   end
 
 
@@ -47,16 +47,16 @@ class ArchivedStudentController < ApplicationController
   end
 
   def reports
-    @student= ArchivedStudent.find params[:id]
+    @student = ArchivedStudent.find params[:id]
     @batch = @student.batch
     @grouped_exams = GroupedExam.find_all_by_batch_id(@batch.id)
-    @normal_subjects = Subject.find_all_by_batch_id(@batch.id,:conditions=> {:no_exams => false, :elective_group_id => nil, :is_deleted => false})
-    @student_electives = StudentsSubject.find_all_by_student_id(@student.former_id,:conditions=>{:batch_id=>@batch.id})
+    @normal_subjects = Subject.find_all_by_batch_id(@batch.id, :conditions => {:no_exams => false, :elective_group_id => nil, :is_deleted => false})
+    @student_electives = StudentsSubject.find_all_by_student_id(@student.former_id, :conditions => {:batch_id => @batch.id})
     @elective_subjects = []
     @student_electives.each do |e|
-      @elective_subjects.push Subject.find(e.subject_id)
+      @elective_subjects << Subject.find(e.subject_id)
     end
-    @subjects = @normal_subjects+@elective_subjects
+    @subjects = @normal_subjects + @elective_subjects
     @exam_groups = @batch.exam_groups
     @exam_groups.reject!{|e| !e.result_published? }
     @old_batches = @student.all_batches
@@ -77,21 +77,21 @@ class ArchivedStudentController < ApplicationController
     #academic-archived-report
     @student = ArchivedStudent.find(params[:student])
     @batch = Batch.find(params[:year])
-    @type= params[:type]
-    if params[:type] == 'grouped'
+    @type = params[:type]
+    if @type == 'grouped'
       @grouped_exams = GroupedExam.find_all_by_batch_id(@batch.id)
       @exam_groups = []
       @grouped_exams.each do |x|
-        @exam_groups.push ExamGroup.find(x.exam_group_id)
+        @exam_groups << ExamGroup.find(x.exam_group_id)
       end
     else
       @exam_groups = ExamGroup.find_all_by_batch_id(@batch.id)
     end
-    general_subjects = Subject.find_all_by_batch_id(@batch.id, :conditions=>{:elective_group_id=>nil, :is_deleted=>false})
-    student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions=> {:batch_id=>@batch.id})
+    general_subjects = Subject.find_all_by_batch_id(@batch.id, :conditions => {:elective_group_id => nil, :is_deleted => false})
+    student_electives = StudentsSubject.find_all_by_student_id(@student.id, :conditions => {:batch_id => @batch.id})
     elective_subjects = []
     student_electives.each do |elect|
-      elective_subjects.push Subject.find(elect.subject_id)
+      elective_subjects << Subject.find(elect.subject_id)
     end
     @subjects = general_subjects + elective_subjects
   end
@@ -106,63 +106,62 @@ class ArchivedStudentController < ApplicationController
     else
       @end_date =  @student.created_at.to_date
     end
-    unless @config.config_value == 'Daily'
-      @academic_days=@batch.subject_hours(@start_date, @end_date, 0).values.flatten.compact.count
-      @student_leaves = SubjectLeave.find(:all,  :conditions =>{:batch_id=>@batch.id,:student_id=>@student.former_id,:month_date => @start_date..@end_date})
-      @leaves= @student_leaves.count
-      @leaves||=0
+    if @config.config_value != 'Daily'
+      @academic_days = @batch.subject_hours(@start_date, @end_date, 0).values.flatten.compact.count
+      @student_leaves = SubjectLeave.all(:conditions => {:batch_id => @batch.id,:student_id => @student.former_id, :month_date => @start_date..@end_date})
+      @leaves = @student_leaves.count
+      @leaves ||= 0
       @attendance = (@academic_days - @leaves)
-      @percent = (@attendance.to_f/@academic_days)*100 unless @academic_days == 0
+      @percent = (@attendance.to_f / @academic_days) * 100 unless @academic_days == 0
     else
-      @student_leaves = Attendance.find(:all,  :conditions =>{:student_id=>@student.former_id,:month_date => @start_date..@end_date})
-      @academic_days=@batch.academic_days.select{|v| v<=@end_date}.count
-      leaves_forenoon=Attendance.count(:all,:conditions=>{:student_id=>@student.former_id,:forenoon=>true,:afternoon=>false,:month_date => @start_date..@end_date})
-      leaves_afternoon=Attendance.count(:all,:conditions=>{:student_id=>@student.former_id,:forenoon=>false,:afternoon=>true,:month_date => @start_date..@end_date})
-      leaves_full=Attendance.count(:all,:conditions=>{:student_id=>@student.former_id,:forenoon=>true,:afternoon=>true,:month_date => @start_date..@end_date})
-      @leaves=leaves_full.to_f+(0.5*(leaves_forenoon.to_f+leaves_afternoon.to_f))
+      @student_leaves = Attendance.all(:conditions => {:student_id => @student.former_id, :month_date => @start_date..@end_date})
+
+      @academic_days = @batch.academic_days.select{|v| v <= @end_date}.count
+      leaves_forenoon = Attendance.count(:all, :conditions => {:student_id => @student.former_id, :forenoon => true, :afternoon => false, :month_date => @start_date..@end_date})
+      leaves_afternoon = Attendance.count(:all, :conditions => {:student_id => @student.former_id, :forenoon => false, :afternoon => true, :month_date => @start_date..@end_date})
+      leaves_full = Attendance.count(:all, :conditions => {:student_id => @student.former_id, :forenoon => true, :afternoon => true, :month_date => @start_date..@end_date})
+      @leaves = leaves_full.to_f + (0.5 * (leaves_forenoon.to_f + leaves_afternoon.to_f))
       @attendance = (@academic_days - @leaves)
-      @percent = (@attendance.to_f/@academic_days)*100 unless @academic_days == 0
+      @percent = (@attendance.to_f / @academic_days) * 100 unless @academic_days == 0
     end
     #    @report = PeriodEntry.find_all_by_batch_id(@batch.id,  :conditions =>{:month_date => @start_date..@end_date})
-
   end
-
 
   def generated_report
     if params[:student].nil?
       @exam_group = ExamGroup.find(params[:exam_report][:exam_group_id])
       @batch = @exam_group.batch
       @student = @batch.students.first
-      general_subjects = Subject.find_all_by_batch_id(@batch.id, :conditions=>{:elective_group_id => nil})
-      student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions=>{:batch_id => @batch.id})
+      general_subjects = Subject.find_all_by_batch_id(@batch.id, :conditions => {:elective_group_id => nil})
+      student_electives = StudentsSubject.find_all_by_student_id(@student.id, :conditions => {:batch_id => @batch.id})
       elective_subjects = []
       student_electives.each do |elect|
-        elective_subjects.push Subject.find(elect.subject_id)
+        elective_subjects << Subject.find(elect.subject_id)
       end
       @subjects = general_subjects + elective_subjects
       @exams = []
       @subjects.each do |sub|
         exam = Exam.find_by_exam_group_id_and_subject_id(@exam_group.id,sub.id)
-        @exams.push exam unless exam.nil?
+        @exams << exam if exam.present?
       end
       @graph = open_flash_chart_object(770, 350,
         "/archived_student/graph_for_generated_report?batch=#{@student.batch.id}&examgroup=#{@exam_group.id}&student=#{@student.id}")
     else
       @exam_group = ExamGroup.find(params[:exam_group])
       @student = ArchivedStudent.find(params[:student])
-      @student.id=@student.former_id
+      @student.id = @student.former_id
       @batch = @student.batch
-      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions=>{:elective_group_id => nil})
-      student_electives = StudentsSubject.find_all_by_student_id(@student.former_id,:conditions=>{:batch_id => @student.batch.id})
+      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions => {:elective_group_id => nil})
+      student_electives = StudentsSubject.find_all_by_student_id(@student.former_id, :conditions => {:batch_id => @student.batch.id})
       elective_subjects = []
       student_electives.each do |elect|
-        elective_subjects.push Subject.find(elect.subject_id)
+        elective_subjects << Subject.find(elect.subject_id)
       end
       @subjects = general_subjects + elective_subjects
       @exams = []
       @subjects.each do |sub|
         exam = Exam.find_by_exam_group_id_and_subject_id(@exam_group.id,sub.id)
-        @exams.push exam unless exam.nil?
+        @exams << exam if exam.present?
       end
       @graph = open_flash_chart_object(770, 350,
         "/archived_student/graph_for_generated_report?batch=#{@student.batch.id}&examgroup=#{@exam_group.id}&student=#{@student.id}")
@@ -175,17 +174,17 @@ class ArchivedStudentController < ApplicationController
     @student = ArchivedStudent.find_by_former_id(params[:student])
     @student.id = @student.former_id
     @batch = @student.batch
-    general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions=>{:elective_group_id => nil})
-    student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions=>{:batch_id => @student.batch.id})
+    general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions => {:elective_group_id => nil})
+    student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions => {:batch_id => @student.batch.id})
     elective_subjects = []
     student_electives.each do |elect|
-      elective_subjects.push Subject.find(elect.subject_id)
+      elective_subjects << Subject.find(elect.subject_id)
     end
     @subjects = general_subjects + elective_subjects
     @exams = []
     @subjects.each do |sub|
       exam = Exam.find_by_exam_group_id_and_subject_id(@exam_group.id,sub.id)
-      @exams.push exam unless exam.nil?
+      @exams << exam if exam.present?
     end
     render :pdf => 'generated_report_pdf'
 
@@ -197,11 +196,11 @@ class ArchivedStudentController < ApplicationController
   def generated_report3
     #student-subject-wise-report
     @student = ArchivedStudent.find(params[:student])
-    @student.id=@student.former_id
+    @student.id = @student.former_id
     @batch = @student.batch
     @subject = Subject.find(params[:subject])
-    @exam_groups = ExamGroup.find(:all,:conditions=>{:batch_id=>@batch.id})
-    @exam_groups.reject!{|e| e.result_published==false}
+    @exam_groups = ExamGroup.all(:conditions => {:batch_id => @batch.id})
+    @exam_groups.reject!{|e| !e.result_published }
     @graph = open_flash_chart_object(770, 350,
       "/archived_student/graph_for_generated_report3?subject=#{@subject.id}&student=#{@student.id}")
   end
@@ -217,7 +216,7 @@ class ArchivedStudentController < ApplicationController
 
   def generated_report4
     #grouped-exam-report-for-batch
-    unless params[:student].nil?
+    if params[:student].present?
       @student = ArchivedStudent.find(params[:student])
       @batch = @student.batch
       @type  = params[:type]
@@ -225,28 +224,26 @@ class ArchivedStudentController < ApplicationController
         @grouped_exams = GroupedExam.find_all_by_batch_id(@batch.id)
         @exam_groups = []
         @grouped_exams.each do |x|
-          @exam_groups.push ExamGroup.find(x.exam_group_id)
+          @exam_groups << ExamGroup.find(x.exam_group_id)
         end
       else
         @exam_groups = ExamGroup.find_all_by_batch_id(@batch.id)
-        @exam_groups.reject!{|e| e.result_published==false}
+        @exam_groups.reject!{|e| !e.result_published }
       end
-      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions=>{:elective_group_id => nil, :is_deleted => false})
-      student_electives = StudentsSubject.find_all_by_student_id(@student.former_id,:conditions=>{:batch_id => @student.batch.id})
+      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions => {:elective_group_id => nil, :is_deleted => false})
+      student_electives = StudentsSubject.find_all_by_student_id(@student.former_id, :conditions => {:batch_id => @student.batch.id})
       elective_subjects = []
       student_electives.each do |elect|
-        elective_subjects.push Subject.find(elect.subject_id)
+        elective_subjects << Subject.find(elect.subject_id)
       end
       @subjects = general_subjects + elective_subjects
     end
-
   end
 
 
   def generated_report4_pdf
-
     #grouped-exam-report-for-batch
-    unless params[:student].nil?
+    if params[:student].present?
       @student = ArchivedStudent.find(params[:student])
       @batch = @student.batch
       @type  = params[:type]
@@ -254,22 +251,21 @@ class ArchivedStudentController < ApplicationController
         @grouped_exams = GroupedExam.find_all_by_batch_id(@batch.id)
         @exam_groups = []
         @grouped_exams.each do |x|
-          @exam_groups.push ExamGroup.find(x.exam_group_id)
+          @exam_groups << ExamGroup.find(x.exam_group_id)
         end
       else
         @exam_groups = ExamGroup.find_all_by_batch_id(@batch.id)
-        @exam_groups.reject!{|e| e.result_published==false}
+        @exam_groups.reject!{|e| !e.result_published }
       end
-      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions=>{:elective_group_id => nil})
-      student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions=>{:batch_id => @student.batch.id})
+      general_subjects = Subject.find_all_by_batch_id(@student.batch.id, :conditions => {:elective_group_id => nil})
+      student_electives = StudentsSubject.find_all_by_student_id(@student.id,:conditions => {:batch_id => @student.batch.id})
       elective_subjects = []
       student_electives.each do |elect|
-        elective_subjects.push Subject.find(elect.subject_id)
+        elective_subjects << Subject.find(elect.subject_id)
       end
       @subjects = general_subjects + elective_subjects
     end
-    render :pdf => 'generated_report_pdf',
-      :orientation => 'Landscape'
+    render :pdf => 'generated_report_pdf', :orientation => 'Landscape'
     ##    respond_to do |format|
     ##      format.pdf { render :layout => false }
     ##    end
@@ -281,14 +277,14 @@ class ArchivedStudentController < ApplicationController
 
   def graph_for_generated_report
     student = ArchivedStudent.find_by_former_id(params[:student])
-    student.id=student.former_id
+    student.id = student.former_id
     examgroup = ExamGroup.find(params[:examgroup])
     batch = student.batch
-    general_subjects = Subject.find_all_by_batch_id(batch.id, :conditions=>{:elective_group_id => nil})
-    student_electives = StudentsSubject.find_all_by_student_id(student.id,:conditions=>"batch_id = #{batch.id}")
+    general_subjects = Subject.find_all_by_batch_id(batch.id, :conditions => {:elective_group_id => nil})
+    student_electives = StudentsSubject.find_all_by_student_id(student.id, :conditions => ["batch_id = ?", batch.id])
     elective_subjects = []
     student_electives.each do |elect|
-      elective_subjects.push Subject.find(elect.subject_id)
+      elective_subjects << Subject.find(elect.subject_id)
     end
     subjects = general_subjects + elective_subjects
 
@@ -297,9 +293,9 @@ class ArchivedStudentController < ApplicationController
     data2 = []
 
     subjects.each do |s|
-      exam = Exam.find_by_exam_group_id_and_subject_id(examgroup.id,s.id)
+      exam = Exam.find_by_exam_group_id_and_subject_id(examgroup.id, s.id)
       res = ExamScore.find_by_exam_id_and_student_id(exam, student)
-      unless res.nil?
+      if res.present?
         x_labels << s.code
         data << res.marks
         data2 << exam.class_average_marks
@@ -343,7 +339,7 @@ class ArchivedStudentController < ApplicationController
 
     chart.add_element(bargraph)
     chart.add_element(bargraph2)
-
+    debugger
     render :text => chart.render
   end
 
