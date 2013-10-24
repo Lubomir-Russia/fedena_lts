@@ -526,7 +526,7 @@ authorization do
   end
 
   role :students_control do
-    has_permission_on [:student] , 
+    has_permission_on [:student] ,
       :to => [
       :academic_reports_pdf,
       :academic_report,
@@ -732,7 +732,7 @@ authorization do
   end
 
   role :manage_timetable do
-    
+
     has_permission_on [:class_timings], :to => [:index, :edit, :destroy, :show, :new, :create, :update]
     has_permission_on [:weekday], :to => [:index, :week, :create]
     has_permission_on [:timetable],
@@ -871,7 +871,7 @@ authorization do
     has_permission_on [:sms], :to => [:index, :settings, :students, :batches, :employees, :departments,:all, :update_general_sms_settings, :list_students, :sms_all, :list_employees, :show_sms_messages, :show_sms_logs]
   end
   role :event_management do
-    
+
     has_permission_on [:event], :to => [:index, :show, :confirm_event, :cancel_event, :select_course, :event_group, :course_event, :remove_batch, :select_employee_department, :department_event, :remove_department,:edit_event]
     has_permission_on [:calendar], :to => [:event_delete]
   end
@@ -1193,7 +1193,7 @@ authorization do
       :employee_leave_count_edit,
       :employee_leave_count_update,
       :employee_attendance
-        
+
     ]
     has_permission_on [:payroll] ,
       :to => [
@@ -1389,7 +1389,7 @@ authorization do
     has_permission_on [:sms],  :to => [:index, :settings, :update_general_sms_settings, :students, :list_students, :batches, :sms_all, :employees, :list_employees, :departments, :all, :show_sms_messages, :show_sms_logs]
     has_permission_on [:sms_settings],  :to => [:index, :update_general_sms_settings]
     has_permission_on [:class_timings],  :to => [:index, :edit, :destroy, :show, :new, :create, :update]
-    has_permission_on [:attendance_reports], :to => [:index, :subject, :mode, :show, :year, :report, :filter, :student_details,:report_pdf,:filter_report_pdf]
+    has_permission_on [:attendance_reports], :to => [:index, :subject, :mode, :show, :year, :report, :report2, :filter, :filter2, :advance_search, :student_details,:report_pdf,:filter_report_pdf]
     has_permission_on [:student_attendance], :to => [:index, :student, :month]
     has_permission_on [:configuration], :to => [:index,:settings,:permissions, :add_weekly_holidays, :delete]
     has_permission_on [:subjects], :to => [:index, :new, :create,:destroy,:edit,:update, :show]
@@ -1883,7 +1883,7 @@ authorization do
       :liability_pdf
 
     ]
-        
+
     has_permission_on [:xml], :to =>
       [
       :create_xml,
@@ -1891,7 +1891,7 @@ authorization do
       :settings,
       :download
     ]
-        
+
     has_permission_on [:holiday], :to => [:index,:edit,:delete]
     has_permission_on [:news],
       :to => [
@@ -2189,7 +2189,7 @@ authorization do
       :employee_leave_count_edit,
       :employee_leave_count_update,
       :view_employee_payslip
-      
+
     ]
     has_permission_on [:calendar], :to => [:event_delete]
 
@@ -2501,7 +2501,7 @@ authorization do
   role :subject_attendance do
     has_permission_on [:attendances], :to => [:index, :list_subject, :show, :new, :create, :edit,:update, :destroy,:subject_wise_register]
     has_permission_on [:attendance_reports], :to => [:index, :subject, :mode, :show, :year, :report, :filter, :student_details,:report_pdf,:filter_report_pdf]
-    
+
   end
 
   role :subject_exam do
